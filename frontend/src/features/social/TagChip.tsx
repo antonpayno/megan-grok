@@ -24,7 +24,7 @@ export function TagChip({ tag, count, active = false, className }: TagChipProps)
     >
       <span>#{tag}</span>
       {typeof count === "number" && (
-        <span className={cn("text-xs", active ? "text-white/80" : "text-ink-soft")}>{formatCount(count)}</span>
+        <span className={cn("text-xs", active ? "text-white" : "text-ink-soft")}>{formatCount(count)}</span>
       )}
     </Link>
   );

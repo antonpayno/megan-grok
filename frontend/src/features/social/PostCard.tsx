@@ -12,8 +12,10 @@ export function CraftBadge({ craft, className }: { craft: PostOut["craft"]; clas
   return (
     <span
       className={cn(
-        "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
-        craft === "hama" ? "bg-amber-100 text-amber-800" : "bg-violet-100 text-violet-800",
+        "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ring-1 ring-inset",
+        craft === "hama"
+          ? "bg-amber-100 text-amber-900 ring-amber-200"
+          : "bg-violet-100 text-violet-900 ring-violet-200",
         className,
       )}
     >
@@ -32,7 +34,7 @@ export function PostCard({ post }: { post: PostOut }) {
       <header className="flex items-center gap-2 px-3.5 pt-3">
         <Link
           to={`/u/${post.author.username}`}
-          className="flex min-w-0 items-center gap-2.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+          className="flex min-w-0 items-center gap-2.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
           <Avatar src={post.author.avatar_url} name={post.author.username} size="sm" />
           <span className="min-w-0">
@@ -45,15 +47,32 @@ export function PostCard({ post }: { post: PostOut }) {
         <CraftBadge craft={post.craft} className="ml-auto" />
       </header>
 
-      <Link to={`/p/${post.id}`} className="mt-2.5 block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40">
-        <PatternThumb pattern={post.pattern} />
+      <Link to={`/p/${post.id}`} className="mt-2.5 block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+        <PatternThumb pattern={post.pattern} ariaLabel={`Miniatura del patrón ${post.title}`} />
       </Link>
 
       <div className="px-3.5 pb-3.5 pt-2.5">
-        <Link to={`/p/${post.id}`} className="block">
-          <h3 className="truncate text-[15px] font-semibold leading-snug">{post.title}</h3>
+        <Link
+          to={`/p/${post.id}`}
+          className="block rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        >
+          <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug">{post.title}</h3>
         </Link>
-        <p className="mt-0.5 text-xs text-ink-soft">{patternSize(post.width, post.height, post.colors_count)}</p>
+
+        <div className="mt-1 flex items-center gap-2">
+          <p className="min-w-0 flex-1 truncate text-xs text-ink-soft">
+            {patternSize(post.width, post.height, post.colors_count)}
+          </p>
+          <span className="flex shrink-0 -space-x-1" aria-hidden>
+            {post.pattern.palette.slice(0, 6).map((color, index) => (
+              <span
+                key={`${color.id}-${index}`}
+                className="size-3 rounded-full border border-white ring-1 ring-line"
+                style={{ backgroundColor: color.hex }}
+              />
+            ))}
+          </span>
+        </div>
 
         <div className="mt-2 flex items-center gap-1">
           <button
@@ -61,8 +80,8 @@ export function PostCard({ post }: { post: PostOut }) {
             onClick={actions.toggleLike}
             disabled={actions.pendingLike}
             aria-pressed={actions.liked}
-            aria-label={actions.liked ? "Quitar me gusta" : "Me gusta"}
-            className="flex items-center gap-1.5 rounded-full px-2 py-1.5 text-sm transition-colors hover:bg-brand-soft disabled:opacity-60"
+            aria-label={`${actions.liked ? "Quitar me gusta" : "Me gusta"} (${formatCount(actions.likesCount)})`}
+            className="flex min-h-9 items-center gap-1.5 rounded-full px-2 text-sm transition-colors hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60"
           >
             <Heart
               className={cn("size-5 transition-transform", actions.liked ? "scale-110 fill-brand text-brand" : "text-ink")}
@@ -75,8 +94,8 @@ export function PostCard({ post }: { post: PostOut }) {
 
           <Link
             to={`/p/${post.id}#comentarios`}
-            aria-label="Ver comentarios"
-            className="flex items-center gap-1.5 rounded-full px-2 py-1.5 text-sm transition-colors hover:bg-paper"
+            aria-label={`Ver comentarios (${formatCount(post.comments_count)}) de ${post.title}`}
+            className="flex min-h-9 items-center gap-1.5 rounded-full px-2 text-sm transition-colors hover:bg-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             <MessageCircle className="size-5" aria-hidden />
             <span className="text-xs font-medium text-ink-soft">{formatCount(post.comments_count)}</span>
@@ -88,7 +107,7 @@ export function PostCard({ post }: { post: PostOut }) {
             disabled={actions.pendingSave}
             aria-pressed={actions.saved}
             aria-label={actions.saved ? "Quitar de guardados" : "Guardar"}
-            className="ml-auto rounded-full p-2 transition-colors hover:bg-paper disabled:opacity-60"
+            className="ml-auto grid size-9 place-items-center rounded-full transition-colors hover:bg-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60"
           >
             <Bookmark className={cn("size-5", actions.saved ? "fill-ink text-ink" : "text-ink")} aria-hidden />
           </button>

@@ -6,6 +6,7 @@ import type { PostOut } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
 import { Avatar } from "../components/ui/Avatar";
 import { Button } from "../components/ui/Button";
+import { ButtonLink } from "../components/ui/ButtonLink";
 import { cn } from "../components/ui/cn";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -84,12 +85,10 @@ export default function PostDetailPage() {
         title="Patrón no encontrado"
         description={error ?? "Puede que lo haya borrado su autor."}
         action={
-          <Link to="/">
-            <Button variant="secondary">
-              <ArrowLeft className="size-4" aria-hidden />
-              Volver al feed
-            </Button>
-          </Link>
+          <ButtonLink to="/" variant="secondary">
+            <ArrowLeft className="size-4" aria-hidden />
+            Volver al feed
+          </ButtonLink>
         }
       />
     );
@@ -145,7 +144,7 @@ function PostDetailView({ post }: { post: PostOut }) {
     <article className="mx-auto w-full max-w-4xl">
       <Link
         to="/"
-        className="mb-4 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm text-ink-soft transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+        className="mb-4 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm text-ink-soft transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >
         <ArrowLeft className="size-4" aria-hidden />
         Volver al feed
@@ -154,8 +153,13 @@ function PostDetailView({ post }: { post: PostOut }) {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start">
         <div className="rounded-3xl border border-line bg-white p-3 shadow-card">
           <div className="flex items-center justify-center rounded-2xl bg-paper p-3">
-            <div ref={patternRef} className="w-full max-w-[560px]">
-              <PatternCanvas pattern={post.pattern} cellSize={cellSize} showGrid className="block" />
+            <div ref={patternRef} className="mx-auto flex w-full max-w-[560px] justify-center">
+              <PatternCanvas
+                pattern={post.pattern}
+                cellSize={cellSize}
+                showGrid
+                className="block max-w-full rounded-[3px] [image-rendering:pixelated]"
+              />
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 px-1 pt-3 text-xs text-ink-soft">
@@ -171,7 +175,7 @@ function PostDetailView({ post }: { post: PostOut }) {
             <div className="flex items-center gap-2.5">
               <Link
                 to={`/u/${post.author.username}`}
-                className="flex min-w-0 items-center gap-2.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+                className="flex min-w-0 items-center gap-2.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
                 <Avatar src={post.author.avatar_url} name={post.author.username} size="md" />
                 <span className="min-w-0">
@@ -190,7 +194,7 @@ function PostDetailView({ post }: { post: PostOut }) {
               )}
             </div>
 
-            <h1 className="text-2xl font-bold tracking-tight">{post.title}</h1>
+            <h1 className="break-words text-2xl font-bold tracking-tight">{post.title}</h1>
 
             {post.remix_of && (
               <p className="text-sm text-ink-soft">
@@ -209,7 +213,7 @@ function PostDetailView({ post }: { post: PostOut }) {
               disabled={actions.pendingLike}
               aria-pressed={actions.liked}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-60",
+                "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60",
                 actions.liked ? "border-brand/30 bg-brand-soft text-brand" : "border-line bg-white text-ink hover:bg-paper",
               )}
             >
@@ -223,7 +227,7 @@ function PostDetailView({ post }: { post: PostOut }) {
               disabled={actions.pendingSave}
               aria-pressed={actions.saved}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-60",
+                "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60",
                 actions.saved ? "border-ink/20 bg-ink text-white" : "border-line bg-white text-ink hover:bg-paper",
               )}
             >
@@ -235,7 +239,7 @@ function PostDetailView({ post }: { post: PostOut }) {
               type="button"
               onClick={downloadPng}
               disabled={downloading}
-              className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3.5 py-2 text-sm font-medium text-ink transition-colors hover:bg-paper disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3.5 py-2 text-sm font-medium text-ink transition-colors hover:bg-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60"
             >
               <Download className="size-4" aria-hidden />
               {downloading ? "Generando…" : "Descargar PNG"}
@@ -274,7 +278,7 @@ function PostDetailView({ post }: { post: PostOut }) {
               <button
                 type="button"
                 onClick={() => setConfirmDelete(true)}
-                className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
               >
                 <Trash2 className="size-4" aria-hidden />
                 Eliminar patrón

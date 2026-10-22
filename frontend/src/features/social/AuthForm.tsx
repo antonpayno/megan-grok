@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
-import { AtSign, Lock, Mail, User } from "lucide-react";
+import { AtSign, Grid2x2, Lock, Mail, User } from "lucide-react";
 import { ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { errorMessage } from "./format";
+import { usePageTitle } from "./usePageTitle";
 
 type Mode = "login" | "register";
 type Errors = Partial<Record<"identifier" | "username" | "email" | "password", string>>;
@@ -27,6 +28,8 @@ export function AuthForm({ mode }: { mode: Mode }) {
   const [errors, setErrors] = useState<Errors>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  usePageTitle(mode === "login" ? "Entrar" : "Crear cuenta");
 
   if (!authLoading && user) return <Navigate to={next} replace />;
 
@@ -75,10 +78,13 @@ export function AuthForm({ mode }: { mode: Mode }) {
     <div className="mx-auto w-full max-w-sm py-6 sm:py-12">
       <div className="rounded-3xl border border-line bg-white p-6 shadow-card sm:p-8">
         <div className="mb-6 text-center">
-          <p className="text-2xl" aria-hidden>
-            🧩
-          </p>
-          <h1 className="mt-2 text-xl font-bold tracking-tight">
+          <span
+            className="mx-auto grid size-12 place-items-center rounded-2xl bg-brand text-white shadow-sm"
+            aria-hidden
+          >
+            <Grid2x2 className="size-6" />
+          </span>
+          <h1 className="mt-3 text-xl font-bold tracking-tight">
             {mode === "login" ? "Entra en Pixel Pattern" : "Crea tu cuenta"}
           </h1>
           <p className="mt-1 text-sm text-ink-soft">
@@ -177,6 +183,12 @@ export function AuthForm({ mode }: { mode: Mode }) {
               </Link>
             </>
           )}
+        </p>
+
+        <p className="mt-4 border-t border-line pt-4 text-center text-sm">
+          <Link to="/" className="font-medium text-ink-soft transition-colors hover:text-ink">
+            Explorar el feed sin cuenta
+          </Link>
         </p>
       </div>
     </div>

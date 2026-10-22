@@ -179,8 +179,8 @@ export default function SearchPage() {
               setQuery(e.target.value);
               scheduleSearch(e.target.value);
             }}
-            placeholder="Busca «gato», «#halloween» o @ana_hama"
-            className="h-12 w-full rounded-full border border-line bg-white pl-12 pr-11 text-sm placeholder:text-ink-soft/70 focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/30"
+            placeholder="Busca «gato», «#tag» o @usuario"
+            className="h-12 w-full rounded-full border border-line bg-white pl-12 pr-11 text-sm placeholder:text-ink-soft/80 focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand"
           />
           {query && (
             <button
@@ -277,6 +277,11 @@ export default function SearchPage() {
             icon={<SearchX className="size-6" />}
             title="Sin resultados"
             description={`No hemos encontrado nada para “${qParam.trim()}”. Prueba con otra palabra o un tag.`}
+            action={
+              <Button variant="secondary" onClick={clearQuery}>
+                Borrar búsqueda
+              </Button>
+            }
           />
         ) : (
           <div className="space-y-7">
