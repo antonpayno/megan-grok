@@ -11,6 +11,7 @@ import pytest
 from PIL import Image, ImageDraw
 
 from app.engine import palettes
+from app.engine.color import hex_to_rgb
 from app.engine.convert import (
     _despeckle,
     _merge_similar,
@@ -64,6 +65,57 @@ def test_convert_proportional_dimensions(client):
     pattern = PatternData(**response.json())
     assert (pattern.width, pattern.height) == (20, 10)
     assert len(pattern.cells) == 200
+
+
+def test_convert_300x100_mantiene_proporcion_3_1(client):
+    response = _post(client, _bicolor(300, 100), width=90)
+    assert response.status_code == 200
+    pattern = PatternData(**response.json())
+    assert (pattern.width, pattern.height) == (90, 30)
+
+
+def test_convert_no_amplia_imagenes_pequenas(client):
+    response = _post(client, _bicolor(20, 30), width=60)
+    assert response.status_code == 200
+    pattern = PatternData(**response.json())
+    # width=60 se recorta al ancho real: 1 píxel = 1 celda, sin estirar.
+    assert (pattern.width, pattern.height) == (20, 30)
+
+
+def test_imagen_moi_alta_reduce_sen_deformar(client):
+    response = _post(client, _bicolor(100, 300), width=128)
+    assert response.status_code == 200
+    pattern = PatternData(**response.json())
+    assert pattern.height <= 128 and pattern.width <= 128
+    assert abs(pattern.width / pattern.height - 1 / 3) < 0.03
+
+
+def test_pixel_art_16x16_conserva_os_pixeles(client):
+    colors = []
+    for palette_color in palettes.HAMA_MIDI.colors:
+        rgb = hex_to_rgb(palette_color.hex)
+        if rgb not in colors:
+            colors.append(rgb)
+        if len(colors) == 4:
+            break
+
+    image = Image.new("RGB", (16, 16))
+    pixels = image.load()
+    for y in range(16):
+        for x in range(16):
+            pixels[x, y] = colors[(x // 8) + 2 * (y // 8)]
+
+    response = _post(client, _png(image), width=16, max_colors=8, simplify=2)
+    assert response.status_code == 200
+    pattern = PatternData(**response.json())
+    assert (pattern.width, pattern.height) == (16, 16)
+
+    for y in range(16):
+        for x in range(16):
+            cell = pattern.cells[y * 16 + x]
+            assert cell >= 0
+            expected = "#%02X%02X%02X" % colors[(x // 8) + 2 * (y // 8)]
+            assert pattern.palette[cell].hex.upper() == expected
 
 
 def test_convert_bicolor_uses_two_colors(client):

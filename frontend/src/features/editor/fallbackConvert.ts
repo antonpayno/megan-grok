@@ -12,9 +12,19 @@ const SIMPLIFY_FACTOR = [1, 0.8, 0.6, 0.42];
 export async function convertImageLocally(file: Blob, opts: ConvertOptions): Promise<PatternData> {
   const bitmap = await createImageBitmap(file);
   try {
-    const width = Math.max(4, Math.min(128, Math.round(opts.width)));
-    const height = Math.max(1, Math.min(128, Math.round((width * bitmap.height) / bitmap.width)));
-    const pixels = rasterize(bitmap, width, height, opts.simplify);
+    const requested = Math.max(4, Math.min(128, Math.round(opts.width)));
+    const pixelArt = requested >= bitmap.width && bitmap.width <= 128 && bitmap.height <= 128;
+    let width = Math.min(requested, bitmap.width);
+    let height = Math.max(1, Math.round((width * bitmap.height) / bitmap.width));
+    if (height > 128) {
+      width = Math.max(1, Math.floor((bitmap.width * 128) / bitmap.height));
+      height = Math.max(1, Math.round((width * bitmap.height) / bitmap.width));
+    }
+    if (pixelArt) {
+      width = bitmap.width;
+      height = bitmap.height;
+    }
+    const pixels = rasterize(bitmap, width, height, pixelArt ? 0 : opts.simplify, !pixelArt);
 
     const keep: number[] = [];
     for (let i = 0; i < width * height; i++) if (pixels[i * 4 + 3] > 32) keep.push(i);
@@ -46,7 +56,7 @@ export async function convertImageLocally(file: Blob, opts: ConvertOptions): Pro
       cells[i] = centroidToPalette[c];
     }
 
-    if (opts.outline) applyOutline(cells, width, height, mappedPalette, opts.craft);
+    if (opts.outline && !pixelArt) applyOutline(cells, width, height, mappedPalette, opts.craft);
 
     return { craft: opts.craft, width, height, palette: mappedPalette, cells };
   } finally {
@@ -54,19 +64,19 @@ export async function convertImageLocally(file: Blob, opts: ConvertOptions): Pro
   }
 }
 
-function rasterize(bitmap: ImageBitmap, width: number, height: number, simplify: number): Uint8ClampedArray {
+function rasterize(bitmap: ImageBitmap, width: number, height: number, simplify: number, smooth: boolean): Uint8ClampedArray {
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
+  ctx.imageSmoothingEnabled = smooth;
+  if (smooth) ctx.imageSmoothingQuality = "high";
   ctx.drawImage(bitmap, 0, 0, width, height);
   const image = ctx.getImageData(0, 0, width, height);
   const data = image.data;
 
   // "Simplificar": media 3x3 repetida -> aspecto de dibujo con manchas planas.
-  const passes = Math.min(3, Math.max(0, simplify));
+  const passes = smooth ? Math.min(3, Math.max(0, simplify)) : 0;
   if (passes > 0) boxBlur(data, width, height, passes);
   return data;
 }

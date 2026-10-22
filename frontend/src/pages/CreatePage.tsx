@@ -78,6 +78,7 @@ export default function CreatePage() {
   const [craft, setCraft] = useState<Craft>("hama");
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
   const [options, setOptions] = useState<ConvertOptions>({
     craft: "hama",
     width: 29,
@@ -225,6 +226,29 @@ export default function CreatePage() {
 
   useEffect(() => () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
+
+  // Tamaño real de la imagen: límite del slider y base de la proporción.
+  useEffect(() => {
+    if (!previewUrl) {
+      setNaturalSize(null);
+      return;
+    }
+    const image = new window.Image();
+    image.onload = () => {
+      const width = image.naturalWidth || image.width;
+      const height = image.naturalHeight || image.height;
+      if (!width || !height) return;
+      setNaturalSize({ width, height });
+      setOptions((o) => ({
+        ...o,
+        width: Math.max(4, Math.min(o.width, 128, width)),
+      }));
+    };
+    image.src = previewUrl;
+    return () => {
+      image.onload = null;
+    };
   }, [previewUrl]);
 
   // ---------- editor: puntero ----------
@@ -460,6 +484,7 @@ export default function CreatePage() {
         <ImageStep
           craft={craft}
           previewUrl={previewUrl}
+          naturalSize={naturalSize}
           pattern={conversion.pattern}
           busy={conversion.busy}
           error={conversion.error}
@@ -468,6 +493,10 @@ export default function CreatePage() {
           fallback={conversion.fallback}
           onRetry={conversion.retry}
           onChange={(patch) => setOptions((o) => ({ ...o, ...patch }))}
+          onOriginalWidth={() => {
+            if (!naturalSize) return;
+            setOptions((o) => ({ ...o, width: Math.max(4, Math.min(128, naturalSize.width)) }));
+          }}
           onFile={onPickFile}
           onBack={() => setStep("start")}
           onEdit={goEdit}

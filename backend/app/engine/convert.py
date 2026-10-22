@@ -88,6 +88,25 @@ def _load_rgba(data: bytes) -> Image.Image:
     return img
 
 
+def _nearest_palette_grid(rgba: np.ndarray, palette: Palette) -> np.ndarray:
+    """Mapea cada píxel al color más cercano de la paleta, sin suavizar.
+
+    Se usa para pixel art pequeño: 1 píxel = 1 celda y ningún filtro posterior.
+    """
+    pixels = rgba[..., :3].reshape(-1, 3).astype(np.int32)
+    palette_rgb = np.array(
+        [color.hex_to_rgb(c.hex) for c in palette.colors], dtype=np.int32
+    )
+    nearest = np.empty(pixels.shape[0], dtype=np.int32)
+    block = 4096
+    for start in range(0, pixels.shape[0], block):
+        chunk = pixels[start:start + block]
+        distances = ((chunk[:, None, :] - palette_rgb[None, :, :]) ** 2).sum(axis=2)
+        nearest[start:start + block] = distances.argmin(axis=1)
+    nearest[rgba[..., 3].reshape(-1) < 128] = -1
+    return nearest
+
+
 def _auto_exposure(rgb: np.ndarray) -> np.ndarray:
     """Realza sombras en fotos oscuras sin tocar el tono (CLAHE en L).
 
@@ -608,39 +627,61 @@ def convert_image(
 
     img = _load_rgba(data)
     img_w, img_h = img.size
-    height = max(1, min(MAX_PATTERN_SIDE, round(width * img_h / img_w)))
+    requested_width = max(1, min(MAX_PATTERN_SIDE, int(width)))
+
+    # Nunca se amplía por encima del tamaño real: 20×30 con width=60 -> 20×30.
+    width = min(requested_width, img_w)
+    height = max(1, round(width * img_h / img_w))
+    if height > MAX_PATTERN_SIDE:
+        # Imagen muy alta: baja el ancho para conservar la proporción, sin recortar.
+        width = max(1, min(img_w, int(img_w * MAX_PATTERN_SIDE / img_h)))
+        height = max(1, min(MAX_PATTERN_SIDE, round(width * img_h / img_w)))
+
+    pixel_art = (
+        requested_width >= img_w
+        and img_w <= MAX_PATTERN_SIDE
+        and img_h <= MAX_PATTERN_SIDE
+    )
+    if pixel_art:
+        width, height = img_w, img_h
 
     # ``remove_background`` se mantiene en la firma por compatibilidad con el
     # contrato de la API, pero ya no se aplica: el recorte se hace en el editor.
     _ = remove_background
 
     rgba = np.asarray(img, dtype=np.uint8)
-    rgb = rgba[..., :3]
-    alpha = rgba[..., 3]
 
-    # Resolución intermedia proporcional al patrón, acotada por arriba para que
-    # el mean-shift siga siendo rápido con patrones grandes.
-    work_side = min(MAX_WORK_SIDE, max(240, width * WORK_PIXELS_PER_CELL))
-    scale = min(1.0, work_side / max(img_w, img_h))
-    work_w = max(width, round(img_w * scale))
-    work_h = max(height, round(img_h * scale))
-    if (work_w, work_h) != (img_w, img_h):
-        rgb = cv2.resize(rgb, (work_w, work_h), interpolation=cv2.INTER_AREA)
-        alpha = cv2.resize(alpha, (work_w, work_h), interpolation=cv2.INTER_AREA)
+    if pixel_art:
+        # Pixel art exacto: 1 píxel = 1 celda, sin suavizado ni limpieza.
+        grid = _nearest_palette_grid(rgba, palette)
+        chosen = list(range(len(palette.colors)))
+    else:
+        rgb = rgba[..., :3]
+        alpha = rgba[..., 3]
 
-    rgb = _simplify(rgb, simplify)
+        # Resolución intermedia proporcional al patrón, acotada por arriba para que
+        # el mean-shift siga siendo rápido con patrones grandes.
+        work_side = min(MAX_WORK_SIDE, max(240, width * WORK_PIXELS_PER_CELL))
+        scale = min(1.0, work_side / max(img_w, img_h))
+        work_w = max(width, round(img_w * scale))
+        work_h = max(height, round(img_h * scale))
+        if (work_w, work_h) != (img_w, img_h):
+            rgb = cv2.resize(rgb, (work_w, work_h), interpolation=cv2.INTER_AREA)
+            alpha = cv2.resize(alpha, (work_w, work_h), interpolation=cv2.INTER_AREA)
 
-    # Reducción a la rejilla del patrón.
-    rgb_small = cv2.resize(rgb, (width, height), interpolation=cv2.INTER_AREA)
-    alpha_small = cv2.resize(alpha, (width, height), interpolation=cv2.INTER_AREA)
-    empty = alpha_small < 128
+        rgb = _simplify(rgb, simplify)
 
-    lab = color.srgb_to_lab(rgb_small / 255.0)
-    grid, chosen = _quantize(lab, empty, palette, effective_max_colors)
-    grid, chosen = _cleanup(grid, chosen, palette, simplify, lab)
+        # Reducción a la rejilla del patrón.
+        rgb_small = cv2.resize(rgb, (width, height), interpolation=cv2.INTER_AREA)
+        alpha_small = cv2.resize(alpha, (width, height), interpolation=cv2.INTER_AREA)
+        empty = alpha_small < 128
 
-    if outline:
-        grid, chosen = _outline(grid, chosen, palette)
+        lab = color.srgb_to_lab(rgb_small / 255.0)
+        grid, chosen = _quantize(lab, empty, palette, effective_max_colors)
+        grid, chosen = _cleanup(grid, chosen, palette, simplify, lab)
+
+        if outline:
+            grid, chosen = _outline(grid, chosen, palette)
 
     if not chosen:
         return PatternData(craft=craft, width=width, height=height, palette=[], cells=[-1] * (width * height))

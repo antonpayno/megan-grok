@@ -1,5 +1,5 @@
 // Paso 2: imagen original + conversión con controles (ancho, colores, simplificar…).
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   AlertCircle,
   AlertTriangle,
@@ -18,6 +18,8 @@ import type { ConversionSource } from "./useImageConversion";
 export interface ImageStepProps {
   craft: Craft;
   previewUrl: string | null;
+  /** Tamaño real de la imagen en píxeles (naturalWidth/naturalHeight). */
+  naturalSize?: { width: number; height: number } | null;
   pattern: PatternData | null;
   busy: boolean;
   error: string | null;
@@ -27,6 +29,8 @@ export interface ImageStepProps {
   fallback?: boolean;
   onRetry?: () => void;
   onChange: (patch: Partial<ConvertOptions>) => void;
+  /** Pone el ancho al tamaño real de la imagen (máx. 128). */
+  onOriginalWidth?: () => void;
   onFile: (file: File) => void;
   onBack: () => void;
   onEdit: () => void;
@@ -37,6 +41,7 @@ const SIMPLIFY_LABELS = ["Foto", "Suave", "Dibujo", "Cómic"] as const;
 export default function ImageStep({
   craft,
   previewUrl,
+  naturalSize = null,
   pattern,
   busy,
   error,
@@ -45,12 +50,19 @@ export default function ImageStep({
   fallback = false,
   onRetry,
   onChange,
+  onOriginalWidth,
   onFile,
   onBack,
   onEdit,
 }: ImageStepProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
+
+  const maxWidth = naturalSize ? Math.max(4, Math.min(128, naturalSize.width)) : 128;
+  const expectedHeight =
+    naturalSize && naturalSize.width > 0
+      ? Math.max(1, Math.round((options.width * naturalSize.height) / naturalSize.width))
+      : null;
 
   return (
     <div className="space-y-4">
@@ -165,7 +177,7 @@ export default function ImageStep({
           <figure className="relative overflow-hidden rounded-2xl border border-line bg-white shadow-card">
             <div className="relative flex h-56 items-center justify-center overflow-hidden bg-ink/[0.03] p-2">
               {pattern ? (
-                <PatternCanvas pattern={pattern} fit className="max-h-52 w-auto rounded" />
+                <PatternPreview pattern={pattern} />
               ) : (
                 <span className="flex flex-col items-center gap-2 text-sm text-ink-soft">
                   <Sparkles size={20} className="text-brand" />
@@ -203,16 +215,46 @@ export default function ImageStep({
             <input
               type="range"
               min={4}
-              max={128}
+              max={maxWidth}
               value={options.width}
               onChange={(e) => onChange({ width: Number(e.target.value) })}
               className="mt-2 w-full accent-brand"
             />
             <span className="mt-0.5 flex justify-between text-[10px] text-ink/40">
               <span>4</span>
-              <span>128</span>
+              <span>{maxWidth}</span>
             </span>
           </label>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-paper px-3 py-2 text-xs text-ink-soft">
+            <span>
+              {naturalSize
+                ? `Imagen ${naturalSize.width} × ${naturalSize.height} px`
+                : "Imagen sin cargar"}
+              {expectedHeight !== null && (
+                <>
+                  {" · Salida "}
+                  <strong className="text-ink">
+                    {options.width} × {expectedHeight}
+                  </strong>{" "}
+                  celdas
+                </>
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={onOriginalWidth}
+              disabled={!naturalSize || options.width >= maxWidth}
+              className="rounded-full border border-line bg-white px-2.5 py-1 font-medium text-ink transition hover:border-brand/50 hover:text-brand disabled:opacity-40"
+              title={
+                naturalSize && naturalSize.width > 128
+                  ? "Máximo permitido: 128 celdas de ancho"
+                  : "1 píxel = 1 celda"
+              }
+            >
+              Tamaño original
+            </button>
+          </div>
 
           <label className="block text-sm">
             <span className="flex items-center justify-between text-ink-soft">
@@ -289,6 +331,34 @@ export default function ImageStep({
           e.target.value = "";
         }}
       />
+    </div>
+  );
+}
+
+/** Vista previa que cabe entera en el hueco, centrada y sin deformar. */
+function PatternPreview({ pattern }: { pattern: PatternData }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [cellSize, setCellSize] = useState(4);
+
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const update = () => {
+      const width = element.clientWidth;
+      const height = element.clientHeight;
+      if (!width || !height) return;
+      const next = Math.floor(Math.min(width / pattern.width, height / pattern.height));
+      setCellSize(Math.max(1, Math.min(32, next)));
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [pattern.width, pattern.height]);
+
+  return (
+    <div ref={ref} className="flex h-full w-full items-center justify-center">
+      <PatternCanvas pattern={pattern} cellSize={cellSize} className="rounded [image-rendering:pixelated]" />
     </div>
   );
 }
