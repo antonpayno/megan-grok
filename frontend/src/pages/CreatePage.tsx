@@ -118,9 +118,12 @@ export default function CreatePage() {
   }, [step, craft, editor.pattern, title, description, tags, remixOf, file, options]);
 
   useEffect(() => {
+    // No pisar el borrador guardado al entrar de cero o al abrir un remix.
+    if (remixParam) return;
+    if (step === "start" && !editor.pattern.cells.some((c) => c >= 0)) return;
     const t = window.setTimeout(saveDraft, 500);
     return () => window.clearTimeout(t);
-  }, [saveDraft]);
+  }, [saveDraft, step, remixParam, editor.pattern]);
 
   // restaurar borrador al entrar (salvo que vengamos de un remix)
   useEffect(() => {
