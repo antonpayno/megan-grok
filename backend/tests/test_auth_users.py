@@ -320,6 +320,114 @@ def test_seed_usa_ids_de_paletas_reales():
     assert hama.palette[0].hex == dmc.palette[0].hex == "#FF5D8F"
 
 
+# ---------- casos límite ----------
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"username": "ab", "email": "ab@test.com", "password": "secreto1"},
+        {"username": "a b", "email": "ab@test.com", "password": "secreto1"},
+        {"username": "ana", "email": "ana@test.com", "password": "123"},
+    ],
+)
+def test_register_payload_invalido_422(client, payload):
+    assert client.post("/api/auth/register", json=payload).status_code == 422
+
+
+def test_patch_me_display_name_vacio_400(client, make_user):
+    headers = make_user("ana")
+
+    r = client.patch("/api/users/me", headers=headers, json={"display_name": "   "})
+
+    assert r.status_code == 400
+
+
+def test_patch_me_actualiza_avatar_url_recortada(client, make_user):
+    headers = make_user("ana")
+
+    r = client.patch(
+        "/api/users/me", headers=headers, json={"avatar_url": "  /media/x.png  "}
+    )
+
+    assert r.status_code == 200
+    assert r.json()["avatar_url"] == "/media/x.png"
+
+
+def test_follow_y_avatar_sen_sesion_401(client, make_user):
+    make_user("ana")
+
+    assert client.post("/api/users/ana/follow").status_code == 401
+    assert client.delete("/api/users/ana/follow").status_code == 401
+    assert (
+        client.post(
+            "/api/users/me/avatar", files={"file": ("a.png", b"x", "image/png")}
+        ).status_code
+        == 401
+    )
+
+
+def test_avatar_recorta_o_cadrado_centrado(client, make_user, monkeypatch, tmp_path):
+    import app.routers.users as users_router
+
+    monkeypatch.setattr(users_router, "MEDIA_DIR", tmp_path)
+    headers = make_user("ana")
+
+    source = Image.new("RGB", (300, 100), (255, 0, 0))
+    source.paste((0, 255, 0), (100, 0, 200, 100))
+    source.paste((0, 0, 255), (200, 0, 300, 100))
+    buffer = BytesIO()
+    source.save(buffer, format="PNG")
+
+    r = client.post(
+        "/api/users/me/avatar",
+        headers=headers,
+        files={"file": ("bandas.png", buffer.getvalue(), "image/png")},
+    )
+
+    assert r.status_code == 200
+    stored = tmp_path / "avatars" / f"{r.json()['id']}.png"
+    with Image.open(stored) as saved:
+        assert saved.size == (256, 256)
+        assert saved.getpixel((128, 128)) == (0, 255, 0)
+
+
+def test_followers_devolve_como_moito_100(client, session, make_user):
+    make_user("ana")
+    ana = _user(session, "ana")
+    now = datetime.now(timezone.utc)
+
+    fans = []
+    for index in range(105):
+        fan = models.User(
+            username=f"fan{index:03d}",
+            email=f"fan{index:03d}@test.com",
+            password_hash="x",
+            display_name=f"Fan {index}",
+        )
+        session.add(fan)
+        fans.append(fan)
+    session.commit()
+    for index, fan in enumerate(fans):
+        session.refresh(fan)
+        session.add(
+            models.Follow(
+                follower_id=fan.id,
+                followee_id=ana.id,
+                created_at=now - timedelta(minutes=index),
+            )
+        )
+    session.commit()
+
+    r = client.get("/api/users/ana/followers")
+
+    assert r.status_code == 200
+    usernames = [u["username"] for u in r.json()]
+    assert len(usernames) == 100
+    assert usernames[0] == "fan000"  # el más reciente
+    assert usernames[-1] == "fan099"
+    assert "fan104" not in usernames
+
+
 # ---------- avatar ----------
 
 def _png_bytes(size: tuple[int, int] = (640, 480)) -> bytes:
