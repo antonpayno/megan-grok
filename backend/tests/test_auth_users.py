@@ -313,6 +313,25 @@ def test_seed_patrones_validos_y_en_rango():
         assert 1 <= len(tags) <= 10
 
 
+def test_seed_escala_duplica_cada_celda():
+    from app import seed
+
+    pattern = seed._build_pattern("frog", "hama", 2)
+    width = pattern.width
+
+    # Cada celda del diseño original debe ocupar un bloque 2x2, no repetir
+    # la fila entera al lado (eso deformaba el patrón).
+    for y in range(0, pattern.height, 2):
+        for x in range(0, width, 2):
+            block = {
+                pattern.cells[y * width + x],
+                pattern.cells[y * width + x + 1],
+                pattern.cells[(y + 1) * width + x],
+                pattern.cells[(y + 1) * width + x + 1],
+            }
+            assert len(block) == 1
+
+
 def test_seed_usa_ids_de_paletas_reales():
     from app import seed
 

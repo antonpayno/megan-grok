@@ -387,7 +387,11 @@ def _build_pattern(design_key: str, craft: str, scale: int) -> PatternData:
         )
 
     role_to_index = {role: index for index, role in enumerate(roles_in_order)}
-    scaled_rows = [row * scale for row in rows for _ in range(scale)]
+    scaled_rows = [
+        "".join(char * scale for char in row)
+        for row in rows
+        for _ in range(scale)
+    ]
     cells = [
         -1 if char == "." else role_to_index[char_to_role[char]]
         for row in scaled_rows
