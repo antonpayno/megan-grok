@@ -12,6 +12,7 @@ import PatternCanvas from "../components/pattern/PatternCanvas";
 import MaterialsList from "../features/editor/MaterialsList";
 import ZoomPanView from "../features/editor/ZoomPanView";
 import { contrastInk, HAMA_BOARD, colorCounts } from "../features/editor/patternUtils";
+import { getLocalPost, toPostOut } from "../features/editor/localPosts";
 
 const USE_MOCKS = import.meta.env.VITE_MOCKS === "1";
 
@@ -54,6 +55,7 @@ export default function MakePage() {
   const [highlight, setHighlight] = useState<number | null>(null);
   const [zoom, setZoom] = useState(1);
   const [panMode, setPanMode] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
   const [have, setHave] = useState<Set<string>>(new Set());
   const strokeValue = useRef<number | null>(null);
 
@@ -68,7 +70,18 @@ export default function MakePage() {
     setLoading(true);
     const load = async () => {
       try {
-        const data = USE_MOCKS ? mockPost(postId) : await api.getPost(postId);
+        let data: PostOut;
+        if (USE_MOCKS) {
+          data = mockPost(postId);
+        } else {
+          try {
+            data = await api.getPost(postId);
+          } catch (err) {
+            const local = getLocalPost(postId);
+            if (!local) throw err;
+            data = toPostOut(local);
+          }
+        }
         if (!alive) return;
         setPost(data);
         setMask(loadMask(postId, data.pattern.width * data.pattern.height));
@@ -282,6 +295,14 @@ export default function MakePage() {
         </p>
       )}
 
+      <button
+        type="button"
+        onClick={() => setPanelOpen((v) => !v)}
+        className="w-full rounded-xl border border-ink/15 bg-white px-3 py-2 text-sm text-ink/70 lg:hidden"
+      >
+        {panelOpen ? "Ocultar colores y materiales" : "Ver colores y materiales"}
+      </button>
+
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-3">
           <div className="rounded-2xl border border-ink/10 bg-white p-3">
@@ -326,7 +347,7 @@ export default function MakePage() {
           </p>
         </div>
 
-        <div className="space-y-3">
+        <div className={`space-y-3 ${panelOpen ? "" : "hidden"} lg:block`}>
           <section className="rounded-2xl border border-ink/10 bg-white p-4">
             <div className="mb-2 flex items-center justify-between">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-ink/60">Por color</h2>

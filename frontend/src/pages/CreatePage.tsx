@@ -19,6 +19,7 @@ import { usePalettes } from "../features/editor/usePalettes";
 import { convertImageLocally } from "../features/editor/fallbackConvert";
 import { patternToPngBlob } from "../features/editor/exportLocal";
 import { createBlankPattern, normalizePattern } from "../features/editor/patternUtils";
+import { saveLocalPost } from "../features/editor/localPosts";
 
 type Step = "start" | "image" | "editor";
 
@@ -74,6 +75,7 @@ export default function CreatePage() {
   const [convertError, setConvertError] = useState<string | null>(null);
   const [convertSource, setConvertSource] = useState<"backend" | "local">("local");
   const [zoom, setZoom] = useState(1);
+  const [panelOpen, setPanelOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
 
@@ -345,12 +347,22 @@ export default function CreatePage() {
       localStorage.removeItem(DRAFT_KEY);
       navigate(`/p/${post.id}`);
     } catch (err) {
+      if (err instanceof ApiError && err.status === 501) {
+        // El backend social aún no existe: guardamos el post en el navegador para
+        // poder demostrar el flujo completo. Con P3 conectado esto no se ejecuta.
+        const local = saveLocalPost({
+          title: data.title,
+          description: data.description,
+          tags: data.tags,
+          pattern: editor.pattern,
+          remix_of: remixOf,
+        });
+        localStorage.removeItem(DRAFT_KEY);
+        navigate(`/p/${local.id}`);
+        return;
+      }
       const message =
-        err instanceof ApiError
-          ? err.status === 501
-            ? "El backend social (P3) aún no acepta publicaciones. Tu trabajo sigue guardado como borrador."
-            : err.message
-          : "No se pudo publicar el patrón.";
+        err instanceof ApiError ? err.message : "No se pudo publicar el patrón.";
       setPublishError(message);
       saveDraft();
     } finally {
@@ -451,6 +463,14 @@ export default function CreatePage() {
             />
           </div>
 
+          <button
+            type="button"
+            onClick={() => setPanelOpen((v) => !v)}
+            className="w-full rounded-xl border border-ink/15 bg-white px-3 py-2 text-sm text-ink/70 lg:hidden"
+          >
+            {panelOpen ? "Ocultar materiales y ayuda" : "Ver materiales y ayuda"}
+          </button>
+
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
             <div className="space-y-3">
               <ZoomPanView zoom={zoom} onZoom={setZoom} panEnabled={tool === "pan"}>
@@ -482,7 +502,7 @@ export default function CreatePage() {
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className={`space-y-3 ${panelOpen ? "" : "hidden"} lg:block`}>
               <MaterialsList pattern={pattern} showBoards={craft === "hama"} />
 
               <div className="rounded-2xl border border-ink/10 bg-white p-4 text-sm text-ink/60">
