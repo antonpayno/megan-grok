@@ -25,8 +25,8 @@ def list_palettes():
 async def convert(
     file: UploadFile = File(...),
     craft: Craft = Form("hama"),
-    width: int = Form(29, ge=4, le=128),     # alto = proporcional a la imagen
-    max_colors: int = Form(12, ge=2, le=64),
+    width: int = Form(40, ge=4, le=128),     # alto = proporcional a la imagen
+    max_colors: int = Form(14, ge=2, le=64),
     simplify: int = Form(2, ge=0, le=3),     # 0 = fiel a la foto … 3 = muy "dibujo"
     outline: bool = Form(False),              # contorno oscuro estilo cartoon
     remove_background: bool = Form(False),    # fondo -> celdas vacías (-1)
