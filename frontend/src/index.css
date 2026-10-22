@@ -5,12 +5,81 @@
 @theme {
   --color-brand: #e8456b;
   --color-brand-dark: #c22e52;
+  --color-brand-soft: #fdeaf0;
   --color-ink: #1f1d2b;
+  --color-ink-soft: #6f6a7d;
+  --color-line: #ece6de;
   --color-paper: #fbf8f4;
+  --color-paper-alt: #fffdfb;
   --font-sans: "Inter", system-ui, sans-serif;
+
+  --shadow-card: 0 1px 2px rgb(31 29 43 / 0.04), 0 8px 24px -12px rgb(31 29 43 / 0.12);
+  --shadow-float: 0 12px 40px -12px rgb(31 29 43 / 0.25);
+
+  --animate-fade-in: fade-in 0.2s ease-out both;
+  --animate-slide-up: slide-up 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-pop: pop 0.18s ease-out both;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   background: var(--color-paper);
   color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-brand) 25%, transparent);
+}
+
+/* Utilidades propias (sin renombrar ni borrar tokens existentes). */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background-color: color-mix(in srgb, var(--color-line) 55%, var(--color-paper));
+  &::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      rgb(255 255 255 / 0.65),
+      transparent
+    );
+    animation: shimmer 1.6s infinite;
+  }
 }
