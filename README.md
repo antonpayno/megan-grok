@@ -6,6 +6,18 @@ feed tipo Instagram y haz los de otros.
 > Este README es el plan de equipo para el hackathon. Persona 1 lo reescribirá al final
 > como README del proyecto. Contexto técnico completo para los agentes: **AGENTS.md**.
 
+## Datos de demo
+
+Desde `backend/`:
+
+```bash
+python -m app.seed          # solo si la base de datos está vacía
+python -m app.seed --reset  # borra app.db y vuelve a sembrar todo
+```
+
+Crea 8 usuarios demo con contraseña **`demo1234`** (`lucia`, `mario`, `noa`, `hugo`,
+`ivan`, `alma`, `xiana`, `breogan`), 30 patrones, follows, likes y comentarios.
+
 ## Reparto
 
 | # | Rol | Rama | Prompt |
