@@ -171,6 +171,39 @@ def _counts(grid: np.ndarray, n_colors: int) -> np.ndarray:
     return np.bincount(grid[grid >= 0], minlength=n_colors).astype(np.int64)
 
 
+def _mode_filter(grid: np.ndarray, size: int = 5, iterations: int = 1) -> np.ndarray:
+    """Filtro de moda sobre la rejilla para aplanar zonas y quitar ruido.
+
+    Solo actúa sobre celdas no vacías; las celdas -1 se conservan. Es la
+    diferencia entre un patrón "limpio" y un tablero de píxeles sueltos en
+    imágenes de alta frecuencia (rayas, texturas, fotos con ruido).
+    """
+    if grid.size == 0 or len(np.unique(grid[grid >= 0])) <= 1:
+        return grid
+    pad = size // 2
+    out = grid.copy()
+    height, width = grid.shape
+    for _ in range(iterations):
+        previous = out.copy()
+        for y in range(height):
+            y0, y1 = max(0, y - pad), min(height, y + pad + 1)
+            for x in range(width):
+                if previous[y, x] < 0:
+                    continue
+                x0, x1 = max(0, x - pad), min(width, x + pad + 1)
+                values = previous[y0:y1, x0:x1].ravel()
+                values = values[values >= 0]
+                if values.size == 0:
+                    continue
+                counts = np.bincount(values)
+                best = int(np.argmax(counts))
+                # En empate, conservar el color central si sigue siendo mayoritario.
+                if previous[y, x] >= 0 and counts[previous[y, x]] == counts[best]:
+                    best = int(previous[y, x])
+                out[y, x] = best
+    return out
+
+
 def _compact(grid: np.ndarray, keep: list[int]) -> np.ndarray:
     """Reindexa los colores locales conservando solo los índices de ``keep``."""
     remap = {old: new for new, old in enumerate(keep)}
@@ -180,10 +213,36 @@ def _compact(grid: np.ndarray, keep: list[int]) -> np.ndarray:
     return out
 
 
+def _remove_isolated(grid: np.ndarray, passes: int = 2) -> np.ndarray:
+    """Sustituye celdas sin ningún vecino-4 de su color por la moda de sus vecinas."""
+    for _ in range(passes):
+        h, w = grid.shape
+        changed = False
+        out = grid.copy()
+        for y in range(h):
+            for x in range(w):
+                value = int(grid[y, x])
+                if value < 0:
+                    continue
+                neighbours = []
+                for ny, nx in ((y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1)):
+                    if 0 <= ny < h and 0 <= nx < w and grid[ny, nx] >= 0:
+                        neighbours.append(int(grid[ny, nx]))
+                if not neighbours or value in neighbours:
+                    continue
+                # Moda de los vecinos (empate: el primero encontrado).
+                out[y, x] = max(set(neighbours), key=neighbours.count)
+                changed = True
+        grid = out
+        if not changed:
+            break
+    return grid
+
+
 def _cleanup(
     grid: np.ndarray, chosen: list[int], palette: Palette, simplify: int
 ) -> tuple[np.ndarray, list[int]]:
-    """Funde colores con <0,5 % de celdas y elimina celdas aisladas."""
+    """Funde colores con <0,5 % de celdas, aplana y elimina celdas aisladas."""
     if not chosen:
         return grid, chosen
 
@@ -212,28 +271,13 @@ def _cleanup(
             palette_lab = np.delete(palette_lab, smallest, axis=0)
             n -= 1
 
-    # Celdas aisladas: sin ningún vecino-4 de su mismo color -> color mayoritario vecino.
-    for _ in range(2):
-        h, w = grid.shape
-        changed = False
-        out = grid.copy()
-        for y in range(h):
-            for x in range(w):
-                value = int(grid[y, x])
-                if value < 0:
-                    continue
-                neighbours = []
-                for ny, nx in ((y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1)):
-                    if 0 <= ny < h and 0 <= nx < w and grid[ny, nx] >= 0:
-                        neighbours.append(int(grid[ny, nx]))
-                if not neighbours or value in neighbours:
-                    continue
-                # Moda de los vecinos (empate: el primero encontrado).
-                out[y, x] = max(set(neighbours), key=neighbours.count)
-                changed = True
-        grid = out
-        if not changed:
-            break
+    grid = _remove_isolated(grid, passes=2)
+
+    # En modo "dibujo" (simplify >= 2), aplanar la rejilla al final y volver a
+    # limpiar las celdas sueltas que pueda dejar el filtro de moda.
+    if simplify >= 2 and n > 1:
+        grid = _mode_filter(grid, size=5, iterations=1 if simplify == 2 else 2)
+        grid = _remove_isolated(grid, passes=2)
 
     return grid, chosen
 
@@ -372,7 +416,7 @@ def _main(argv: list[str] | None = None) -> int:
     parser.add_argument("image", type=Path)
     parser.add_argument("--craft", choices=["hama", "cross_stitch"], default="hama")
     parser.add_argument("--width", type=int, default=40)
-    parser.add_argument("--colors", type=int, default=12, dest="max_colors")
+    parser.add_argument("--colors", type=int, default=10, dest="max_colors")
     parser.add_argument("--simplify", type=int, choices=[0, 1, 2, 3], default=2)
     parser.add_argument("--outline", action="store_true")
     parser.add_argument("--remove-background", action="store_true")

@@ -80,10 +80,44 @@ def test_convert_colors_belong_to_palette(client):
 def test_transparent_pixels_become_empty(client):
     image = Image.new("RGBA", (20, 20), (0, 0, 0, 0))
     ImageDraw.Draw(image).rectangle([10, 0, 19, 19], fill=(220, 20, 30, 255))
-    response = _post(client, _png(image), width=10)
+    response = _post(client, _png(image), width=10, simplify=2)
     assert response.status_code == 200
     pattern = PatternData(**response.json())
     assert pattern.cells.count(-1) >= 40
+
+
+def test_simplify_flattens_high_frequency_noise(client):
+    # Rayas diagonales de alta frecuencia: sin el filtro de moda saldrían
+    # muchísimas celdas aisladas ("sal y pimienta").
+    import numpy as np
+
+    yy, xx = np.mgrid[0:240, 0:240]
+    band = ((xx + yy) // 10) % 4
+    colors = np.array([[220, 40, 60], [40, 160, 90], [40, 90, 220], [245, 200, 60]], dtype=np.uint8)
+    image = Image.fromarray(colors[band], "RGB")
+
+    response = _post(client, _png(image), width=40, max_colors=10, simplify=2)
+    assert response.status_code == 200
+    pattern = PatternData(**response.json())
+    width = pattern.width
+    isolated = 0
+    non_empty = 0
+    for y in range(pattern.height):
+        for x in range(width):
+            value = pattern.cells[y * width + x]
+            if value < 0:
+                continue
+            non_empty += 1
+            neighbours = []
+            for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+                if 0 <= nx < width and 0 <= ny < pattern.height:
+                    neighbour = pattern.cells[ny * width + nx]
+                    if neighbour >= 0:
+                        neighbours.append(neighbour)
+            if neighbours and value not in neighbours:
+                isolated += 1
+    assert non_empty > 0
+    assert isolated / non_empty < 0.02
 
 
 def test_remove_background_marks_cells_empty(client):
