@@ -1,10 +1,17 @@
 // PROPIETARIO: Persona 4. Crear patrón: desde imagen o dibujando, y publicarlo.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { AlertCircle, ArrowLeft, Loader2, Sparkles } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  ChevronDown,
+  Keyboard,
+  Loader2,
+  Plus,
+  Sparkles,
+} from "lucide-react";
 import { ApiError, api, downloadBlob } from "../api/client";
 import type { ConvertOptions, Craft, PaletteColor, PatternData } from "../api/types";
-import { mockPost } from "../api/mocks";
 import { useAuth } from "../auth/AuthContext";
 import PatternCanvas from "../components/pattern/PatternCanvas";
 import StartStep from "../features/editor/StartStep";
@@ -13,18 +20,16 @@ import EditorToolbar from "../features/editor/EditorToolbar";
 import ColorPicker from "../features/editor/ColorPicker";
 import MaterialsList from "../features/editor/MaterialsList";
 import PublishDialog, { type PublishData } from "../features/editor/PublishDialog";
-import ZoomPanView from "../features/editor/ZoomPanView";
+import ZoomPanView, { clampZoom } from "../features/editor/ZoomPanView";
 import { usePatternEditor } from "../features/editor/usePatternEditor";
 import { usePalettes } from "../features/editor/usePalettes";
-import { convertImageLocally } from "../features/editor/fallbackConvert";
+import { useImageConversion } from "../features/editor/useImageConversion";
 import { patternToPngBlob } from "../features/editor/exportLocal";
-import { createBlankPattern, normalizePattern } from "../features/editor/patternUtils";
-import { saveLocalPost } from "../features/editor/localPosts";
+import { createBlankPattern, fitZoomFor, normalizePattern } from "../features/editor/patternUtils";
 
 type Step = "start" | "image" | "editor";
 
 const DRAFT_KEY = "pp_draft_v1";
-const USE_MOCKS = import.meta.env.VITE_MOCKS === "1";
 
 interface Draft {
   v: 1;
@@ -51,6 +56,17 @@ function readDraft(): Draft | null {
   }
 }
 
+interface StrokeState {
+  active: boolean;
+  lastX: number;
+  lastY: number;
+  pendingX: number;
+  pendingY: number;
+  raf: number;
+}
+
+const EMPTY_STROKE: StrokeState = { active: false, lastX: 0, lastY: 0, pendingX: 0, pendingY: 0, raf: 0 };
+
 export default function CreatePage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -62,7 +78,6 @@ export default function CreatePage() {
   const [craft, setCraft] = useState<Craft>("hama");
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [imagePattern, setImagePattern] = useState<PatternData | null>(null);
   const [options, setOptions] = useState<ConvertOptions>({
     craft: "hama",
     width: 29,
@@ -71,9 +86,6 @@ export default function CreatePage() {
     outline: false,
     remove_background: false,
   });
-  const [busy, setBusy] = useState(false);
-  const [convertError, setConvertError] = useState<string | null>(null);
-  const [convertSource, setConvertSource] = useState<"backend" | "local">("local");
   const [zoom, setZoom] = useState(1);
   const [panelOpen, setPanelOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -95,7 +107,14 @@ export default function CreatePage() {
   editorRef.current = editor;
   const { pattern, tool, colorIndex } = editor;
 
+  const conversion = useImageConversion(file, options, craft, paletteIdFor(craft));
+  const stroke = useRef<StrokeState>({ ...EMPTY_STROKE });
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const applyZoomFor = useCallback((w: number, h: number) => {
+    setZoom(fitZoomFor(w, h));
+  }, []);
 
   // ---------- borrador ----------
   const saveDraft = useCallback(() => {
@@ -143,13 +162,17 @@ export default function CreatePage() {
     if (stored.options) setOptions(stored.options);
     if (stored.pattern && stored.pattern.cells.some((c) => c >= 0)) {
       editorRef.current.load(stored.pattern, { resetHistory: true });
-      setStep(stored.step === "image" ? "image" : "editor");
+      applyZoomFor(stored.pattern.width, stored.pattern.height);
+      // El paso "imagen" no se puede restaurar (el File no se guarda): si hay patrón,
+      // volvemos directamente al editor.
+      setStep("editor");
     }
-  }, [remixParam]);
+  }, [remixParam, applyZoomFor]);
 
   const resumeDraft = () => {
     if (!draft?.pattern) return;
     editor.load(draft.pattern, { resetHistory: true });
+    applyZoomFor(draft.pattern.width, draft.pattern.height);
     setStep("editor");
   };
 
@@ -161,61 +184,32 @@ export default function CreatePage() {
     let alive = true;
     const load = async () => {
       try {
-        const post = USE_MOCKS ? mockPost(id) : await api.getPost(id);
+        const post = await api.getPost(id);
         if (!alive) return;
         setCraft(post.pattern.craft);
         editorRef.current.load(post.pattern, { resetHistory: true });
+        applyZoomFor(post.pattern.width, post.pattern.height);
         setRemixOf(post.id);
         setTitle(`${post.title} (remix)`.slice(0, 80));
         setStep("editor");
       } catch (err) {
         if (!alive) return;
-        setNotice(
-          err instanceof ApiError && err.status === 501
-            ? "El backend social (P3) todavía no sirve posts: no se pudo cargar el remix."
-            : "No se pudo cargar el patrón para el remix.",
-        );
+        const message =
+          err instanceof ApiError && err.status === 404
+            ? "Ese patrón ya no existe."
+            : err instanceof ApiError && err.status === 401
+              ? "Inicia sesión para remezclar este patrón."
+              : "No se pudo cargar el patrón para el remix.";
+        setNotice(message);
       }
     };
     load();
     return () => {
       alive = false;
     };
-  }, [remixParam]);
+  }, [remixParam, applyZoomFor]);
 
   // ---------- imagen ----------
-  useEffect(() => {
-    if (!file) return;
-    let alive = true;
-    const timer = window.setTimeout(async () => {
-      setBusy(true);
-      setConvertError(null);
-      const opts: ConvertOptions = { ...options, craft, palette_id: paletteIdFor(craft) };
-      try {
-        const result = await api.convertImage(file, opts);
-        if (!alive) return;
-        setImagePattern(normalizePattern(result));
-        setConvertSource("backend");
-      } catch {
-        try {
-          const result = await convertImageLocally(file, opts);
-          if (!alive) return;
-          setImagePattern(result);
-          setConvertSource("local");
-        } catch {
-          if (!alive) return;
-          setConvertError("No se pudo convertir la imagen. Prueba con otra foto o menos resolución.");
-        }
-      } finally {
-        if (alive) setBusy(false);
-      }
-    }, 400);
-    return () => {
-      alive = false;
-      window.clearTimeout(timer);
-    };
-  }, [file, options, craft, paletteIdFor]);
-
   const onPickFile = (f: File) => {
     setFile(f);
     setPreviewUrl((old) => {
@@ -230,30 +224,66 @@ export default function CreatePage() {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
   }, [previewUrl]);
 
-  // ---------- editor: puntero y teclado ----------
+  // ---------- editor: puntero ----------
+  const finishStroke = useCallback(() => {
+    const s = stroke.current;
+    if (s.raf) {
+      cancelAnimationFrame(s.raf);
+      s.raf = 0;
+    }
+    if (s.active && (s.pendingX !== s.lastX || s.pendingY !== s.lastY)) {
+      editorRef.current.paintPath(s.lastX, s.lastY, s.pendingX, s.pendingY);
+    }
+    stroke.current = { ...EMPTY_STROKE };
+    editorRef.current.endStroke();
+  }, []);
+
   const cellHandler = (x: number, y: number, e: React.PointerEvent<HTMLCanvasElement>) => {
+    const ed = editorRef.current;
     if (tool === "picker") {
-      editor.pickAt(x, y);
+      if (e.type === "pointerdown") ed.pickAt(x, y);
       return;
     }
     if (tool === "fill") {
-      editor.fillAt(x, y);
+      if (e.type === "pointerdown") ed.fillAt(x, y);
       return;
     }
     if (tool === "pan") return;
-    if (e.type === "pointerdown") editor.beginStroke();
-    editor.paint(x, y);
+
+    if (e.type === "pointerdown") {
+      finishStroke();
+      ed.beginStroke();
+      ed.paint(x, y);
+      stroke.current = { active: true, lastX: x, lastY: y, pendingX: x, pendingY: y, raf: 0 };
+      return;
+    }
+
+    const s = stroke.current;
+    if (!s.active) return;
+    s.pendingX = x;
+    s.pendingY = y;
+    if (s.raf) return;
+    // Coalescemos varios pointermove en un frame: trazo continuo y sin re-renders de más.
+    s.raf = requestAnimationFrame(() => {
+      const current = stroke.current;
+      current.raf = 0;
+      if (!current.active) return;
+      editorRef.current.paintPath(current.lastX, current.lastY, current.pendingX, current.pendingY);
+      current.lastX = current.pendingX;
+      current.lastY = current.pendingY;
+    });
   };
 
   useEffect(() => {
-    const up = () => editorRef.current.endStroke();
+    const up = () => finishStroke();
     window.addEventListener("pointerup", up);
     window.addEventListener("pointercancel", up);
     return () => {
       window.removeEventListener("pointerup", up);
       window.removeEventListener("pointercancel", up);
+      if (stroke.current.raf) cancelAnimationFrame(stroke.current.raf);
     };
-  }, []);
+  }, [finishStroke]);
 
   useEffect(() => {
     if (step !== "editor") return;
@@ -283,6 +313,7 @@ export default function CreatePage() {
   // ---------- acciones ----------
   const openBlank = (width: number, height: number) => {
     editor.load(createBlankPattern(craft, width, height), { resetHistory: true });
+    applyZoomFor(width, height);
     setStep("editor");
   };
 
@@ -291,8 +322,9 @@ export default function CreatePage() {
   };
 
   const goEdit = () => {
-    if (!imagePattern) return;
-    editor.load(imagePattern, { resetHistory: true });
+    if (!conversion.pattern) return;
+    editor.load(conversion.pattern, { resetHistory: true });
+    applyZoomFor(conversion.pattern.width, conversion.pattern.height);
     setStep("editor");
   };
 
@@ -307,15 +339,13 @@ export default function CreatePage() {
         try {
           const blob = await patternToPngBlob(editor.pattern, 20);
           downloadBlob(blob, "pixel-pattern.png");
-          setNotice("PNG generado en local (el backend de exportación aún no está disponible).");
+          setNotice("PNG generado en tu dispositivo (el servidor no respondió).");
         } catch {
           setNotice("No se pudo exportar el PNG.");
         }
       } else {
         setNotice(
-          err instanceof ApiError && err.status === 501
-            ? "La exportación a PDF llega con el motor de P2. Mientras tanto, usa PNG."
-            : "No se pudo exportar el PDF.",
+          err instanceof ApiError ? err.message : "No se pudo exportar el PDF. Inténtalo de nuevo.",
         );
       }
     } finally {
@@ -345,24 +375,15 @@ export default function CreatePage() {
         remix_of: remixOf,
       });
       localStorage.removeItem(DRAFT_KEY);
+      setDraft(null);
       navigate(`/p/${post.id}`);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 501) {
-        // El backend social aún no existe: guardamos el post en el navegador para
-        // poder demostrar el flujo completo. Con P3 conectado esto no se ejecuta.
-        const local = saveLocalPost({
-          title: data.title,
-          description: data.description,
-          tags: data.tags,
-          pattern: editor.pattern,
-          remix_of: remixOf,
-        });
-        localStorage.removeItem(DRAFT_KEY);
-        navigate(`/p/${local.id}`);
-        return;
-      }
       const message =
-        err instanceof ApiError ? err.message : "No se pudo publicar el patrón.";
+        err instanceof ApiError
+          ? err.status === 401
+            ? "Tu sesión ha caducado. Inicia sesión otra vez."
+            : err.message
+          : "No se pudo publicar el patrón. Comprueba tu conexión.";
       setPublishError(message);
       saveDraft();
     } finally {
@@ -370,18 +391,21 @@ export default function CreatePage() {
     }
   };
 
-  const hasContent = pattern.cells.some((c) => c >= 0);
-  const cellSize = Math.max(6, Math.round(16 * zoom));
+  const hasContent = useMemo(() => pattern.cells.some((c) => c >= 0), [pattern]);
+  const cellSize = Math.max(4, Math.round(16 * zoom));
   const allColors: PaletteColor[] = colorsFor(craft);
 
   return (
-    <div className="space-y-4 pb-24 sm:pb-4">
-      <header className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h1 className="text-xl font-bold">
+    <div className="space-y-4 pb-6">
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand">
+            Estudio de patrones
+          </p>
+          <h1 className="mt-0.5 text-xl font-bold sm:text-2xl">
             {step === "editor" ? "Editor de patrón" : step === "image" ? "Desde imagen" : "Crear patrón"}
           </h1>
-          <p className="text-sm text-ink/55">
+          <p className="text-sm text-ink-soft">
             {remixOf
               ? `Remix del patrón #${remixOf}`
               : step === "editor"
@@ -393,15 +417,19 @@ export default function CreatePage() {
           <button
             type="button"
             onClick={() => setStep("start")}
-            className="flex items-center gap-1.5 text-sm text-ink/60 hover:text-ink"
+            className="flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-2 text-sm text-ink-soft shadow-sm transition hover:border-ink/25 hover:text-ink"
           >
-            <ArrowLeft size={16} /> Empezar de nuevo
+            <ArrowLeft size={16} /> <span className="hidden sm:inline">Empezar de nuevo</span>
+            <span className="sm:hidden">Nuevo</span>
           </button>
         )}
       </header>
 
       {notice && (
-        <p className="flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <p
+          role="status"
+          className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+        >
           <Sparkles size={15} className="mt-0.5 shrink-0" /> {notice}
         </p>
       )}
@@ -415,6 +443,7 @@ export default function CreatePage() {
           }}
           onBlank={openBlank}
           onPickImage={startFromImage}
+          onFile={onPickFile}
           draftInfo={
             draft?.pattern?.cells.some((c) => c >= 0)
               ? `${draft.pattern.width} × ${draft.pattern.height} · ${draft.pattern.palette.length} colores`
@@ -428,11 +457,13 @@ export default function CreatePage() {
         <ImageStep
           craft={craft}
           previewUrl={previewUrl}
-          pattern={imagePattern}
-          busy={busy}
-          error={convertError}
+          pattern={conversion.pattern}
+          busy={conversion.busy}
+          error={conversion.error}
           options={options}
-          source={convertSource}
+          source={conversion.source}
+          fallback={conversion.fallback}
+          onRetry={conversion.retry}
           onChange={(patch) => setOptions((o) => ({ ...o, ...patch }))}
           onFile={onPickFile}
           onBack={() => setStep("start")}
@@ -442,7 +473,7 @@ export default function CreatePage() {
 
       {step === "editor" && (
         <>
-          <div className="sticky bottom-0 z-30 -mx-4 border-t border-ink/10 bg-paper/95 px-4 py-2 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+          <div className="sticky top-14 z-20 -mx-3 border-b border-line bg-paper/95 px-3 py-2 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
             <EditorToolbar
               tool={tool}
               onTool={editor.setTool}
@@ -454,7 +485,10 @@ export default function CreatePage() {
               onSymmetry={editor.setSymmetry}
               width={pattern.width}
               height={pattern.height}
-              onResize={editor.resize}
+              onResize={(w, h) => {
+                editor.resize(w, h);
+                applyZoomFor(w, h);
+              }}
               onClear={editor.clear}
               onExport={handleExport}
               exporting={exporting}
@@ -466,27 +500,47 @@ export default function CreatePage() {
           <button
             type="button"
             onClick={() => setPanelOpen((v) => !v)}
-            className="w-full rounded-xl border border-ink/15 bg-white px-3 py-2 text-sm text-ink/70 lg:hidden"
+            aria-expanded={panelOpen}
+            className="flex w-full items-center justify-between rounded-2xl border border-line bg-white px-3 py-2 text-sm text-ink-soft shadow-sm lg:hidden"
           >
-            {panelOpen ? "Ocultar materiales y ayuda" : "Ver materiales y ayuda"}
+            <span className="flex items-center gap-2">
+              <Sparkles size={15} className="text-brand" />
+              {panelOpen ? "Ocultar materiales y ayuda" : "Ver materiales y ayuda"}
+            </span>
+            <ChevronDown size={16} className={panelOpen ? "rotate-180 transition" : "transition"} />
           </button>
 
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-            <div className="space-y-3">
-              <ZoomPanView zoom={zoom} onZoom={setZoom} panEnabled={tool === "pan"}>
-                <PatternCanvas
-                  pattern={pattern}
-                  cellSize={cellSize}
-                  showGrid
-                  showSymbols={craft === "cross_stitch"}
-                  onCellPointer={cellHandler}
-                  className="rounded-lg shadow-sm"
-                />
-              </ZoomPanView>
+          {pattern.palette.length === 0 && (
+            <p className="flex items-start gap-2 rounded-2xl border border-brand/20 bg-brand-soft/60 px-3 py-2 text-sm text-brand">
+              <Plus size={16} className="mt-0.5 shrink-0" />
+              El lienzo está vacío: añade tu primer color con el botón <strong>+</strong> de la paleta y
+              empieza a pintar.
+            </p>
+          )}
 
-              <div className="rounded-2xl border border-ink/10 bg-white p-3">
-                <div className="mb-2 flex items-center justify-between text-xs text-ink/50">
-                  <span>Colores del patrón</span>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="space-y-3">
+              <div className="rounded-2xl border border-line bg-white p-2 shadow-card">
+                <ZoomPanView
+                  zoom={zoom}
+                  onZoom={(z) => setZoom(clampZoom(z, 0.25, 6))}
+                  min={0.25}
+                  panEnabled={tool === "pan"}
+                >
+                  <PatternCanvas
+                    pattern={pattern}
+                    cellSize={cellSize}
+                    showGrid
+                    showSymbols={pattern.craft === "cross_stitch"}
+                    onCellPointer={cellHandler}
+                    className="rounded-lg shadow-sm"
+                  />
+                </ZoomPanView>
+              </div>
+
+              <div className="rounded-2xl border border-line bg-white p-3 shadow-card">
+                <div className="mb-2 flex items-center justify-between text-xs text-ink-soft">
+                  <span className="font-semibold uppercase tracking-wide">Colores del patrón</span>
                   <span>
                     {pattern.palette.length} colores · {pattern.width} × {pattern.height}
                   </span>
@@ -502,32 +556,34 @@ export default function CreatePage() {
               </div>
             </div>
 
-            <div className={`space-y-3 ${panelOpen ? "" : "hidden"} lg:block`}>
-              <MaterialsList pattern={pattern} showBoards={craft === "hama"} />
+            <aside className={`space-y-3 ${panelOpen ? "" : "hidden"} lg:block`}>
+              <MaterialsList pattern={pattern} showBoards={pattern.craft === "hama"} />
 
-              <div className="rounded-2xl border border-ink/10 bg-white p-4 text-sm text-ink/60">
-                <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink/60">Atajos</h2>
+              <div className="rounded-2xl border border-line bg-white p-4 text-sm text-ink-soft shadow-card">
+                <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-ink/60">
+                  <Keyboard size={15} /> Atajos
+                </h2>
                 <ul className="space-y-1 text-xs">
                   <li>1–5 · lápiz, goma, cubo, cuentagotas, mover</li>
                   <li>Ctrl+Z / Ctrl+Shift+Z · deshacer / rehacer</li>
                   <li>Rueda del ratón · zoom</li>
+                  <li>Arrastra con «Mover» para recorrer el lienzo</li>
                 </ul>
                 {!hasContent && (
-                  <p className="mt-3 flex items-start gap-1.5 rounded-xl bg-paper px-3 py-2 text-xs text-ink/55">
+                  <p className="mt-3 flex items-start gap-1.5 rounded-xl bg-paper px-3 py-2 text-xs text-ink-soft">
                     <AlertCircle size={13} className="mt-0.5 shrink-0" />
                     Añade un color con «+» y pinta alguna celda para poder publicar.
                   </p>
                 )}
               </div>
-            </div>
-          </div>
 
-          {(busy || publishing) && (
-            <p className="flex items-center gap-2 text-sm text-ink/50">
-              <Loader2 size={14} className="animate-spin" />
-              {publishing ? "Publicando…" : "Procesando…"}
-            </p>
-          )}
+              {publishing && (
+                <p className="flex items-center gap-2 text-sm text-ink-soft" role="status">
+                  <Loader2 size={14} className="animate-spin" /> Publicando…
+                </p>
+              )}
+            </aside>
+          </div>
         </>
       )}
 

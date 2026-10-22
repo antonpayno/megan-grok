@@ -139,17 +139,21 @@ export default function EditorToolbar({
             type="button"
             onClick={() => onExport("png")}
             disabled={exporting}
+            title="Descargar PNG"
+            aria-label="Descargar PNG"
             className="flex items-center gap-1.5 rounded-2xl border border-ink/15 px-3 py-2 text-sm text-ink/80 transition hover:border-ink/40 disabled:opacity-40"
           >
-            <Download size={16} /> PNG
+            <Download size={16} /> <span className="hidden sm:inline">PNG</span>
           </button>
           <button
             type="button"
             onClick={() => onExport("pdf")}
             disabled={exporting}
+            title="Descargar PDF"
+            aria-label="Descargar PDF"
             className="flex items-center gap-1.5 rounded-2xl border border-ink/15 px-3 py-2 text-sm text-ink/80 transition hover:border-ink/40 disabled:opacity-40"
           >
-            <Download size={16} /> PDF
+            <Download size={16} /> <span className="hidden sm:inline">PDF</span>
           </button>
           <button
             type="button"

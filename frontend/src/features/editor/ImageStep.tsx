@@ -1,8 +1,19 @@
 // Paso 2: imagen original + conversión con controles (ancho, colores, simplificar…).
 import { useRef, useState } from "react";
-import { AlertCircle, ArrowLeft, Loader2, Sparkles, Upload } from "lucide-react";
+import {
+  AlertCircle,
+  AlertTriangle,
+  ArrowLeft,
+  Check,
+  Image as ImageIcon,
+  Loader2,
+  RefreshCw,
+  Sparkles,
+  Upload,
+} from "lucide-react";
 import type { ConvertOptions, Craft, PatternData } from "../../api/types";
 import PatternCanvas from "../../components/pattern/PatternCanvas";
+import type { ConversionSource } from "./useImageConversion";
 
 export interface ImageStepProps {
   craft: Craft;
@@ -11,12 +22,17 @@ export interface ImageStepProps {
   busy: boolean;
   error: string | null;
   options: ConvertOptions;
-  source: "backend" | "local";
+  source: ConversionSource | null;
+  /** La vista previa viene del respaldo local (la API falló). */
+  fallback?: boolean;
+  onRetry?: () => void;
   onChange: (patch: Partial<ConvertOptions>) => void;
   onFile: (file: File) => void;
   onBack: () => void;
   onEdit: () => void;
 }
+
+const SIMPLIFY_LABELS = ["Foto", "Suave", "Dibujo", "Cómic"] as const;
 
 export default function ImageStep({
   craft,
@@ -26,6 +42,8 @@ export default function ImageStep({
   error,
   options,
   source,
+  fallback = false,
+  onRetry,
   onChange,
   onFile,
   onBack,
@@ -40,29 +58,75 @@ export default function ImageStep({
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-1.5 text-sm text-ink/60 hover:text-ink"
+          className="flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-2 text-sm text-ink-soft shadow-sm transition hover:border-ink/25 hover:text-ink"
         >
           <ArrowLeft size={16} /> Cambiar origen
         </button>
-        <div className="flex items-center gap-2">
-          {source === "local" && (
-            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs text-amber-700">
-              Conversión local (P2 aún no conectado)
+        <div className="flex flex-wrap items-center gap-2">
+          {source === "backend" && (
+            <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+              <Check size={12} /> Convertida en el servidor
             </span>
           )}
           <button
             type="button"
             onClick={onEdit}
-            disabled={!pattern}
-            className="rounded-2xl bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark disabled:opacity-40"
+            disabled={!pattern || busy}
+            className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark disabled:opacity-40"
           >
             Editar patrón
           </button>
         </div>
       </div>
 
+      {fallback && (
+        <div
+          role="status"
+          className="flex flex-wrap items-start justify-between gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+        >
+          <p className="flex items-start gap-2">
+            <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+            <span>
+              <strong>Vista previa generada en tu dispositivo.</strong> El servidor no respondió, así
+              que los colores y el detalle pueden no coincidir con la conversión real.
+            </span>
+          </p>
+          {onRetry && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="flex items-center gap-1.5 rounded-full border border-amber-300 bg-white/70 px-3 py-1 text-xs font-semibold text-amber-900 hover:bg-white"
+            >
+              <RefreshCw size={12} /> Reintentar
+            </button>
+          )}
+        </div>
+      )}
+
+      {error && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-start justify-between gap-2 rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+        >
+          <p className="flex items-start gap-2">
+            <AlertCircle size={16} className="mt-0.5 shrink-0" /> {error}
+          </p>
+          {onRetry && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="flex items-center gap-1.5 rounded-full border border-red-300 bg-white/70 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-white"
+            >
+              <RefreshCw size={12} /> Reintentar
+            </button>
+          )}
+        </div>
+      )}
+
       <div
-        className={`grid gap-4 lg:grid-cols-[1fr_320px] ${dragging ? "ring-2 ring-brand/40" : ""}`}
+        className={`grid gap-4 rounded-3xl lg:grid-cols-[1fr_320px] ${
+          dragging ? "ring-2 ring-brand/40 ring-offset-2 ring-offset-paper" : ""
+        }`}
         onDragOver={(e) => {
           e.preventDefault();
           setDragging(true);
@@ -76,16 +140,18 @@ export default function ImageStep({
         }}
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <figure className="overflow-hidden rounded-2xl border border-ink/10 bg-white">
-            <div className="flex h-56 items-center justify-center bg-ink/5">
+          <figure className="overflow-hidden rounded-2xl border border-line bg-white shadow-card">
+            <div className="flex h-56 items-center justify-center bg-ink/[0.03]">
               {previewUrl ? (
                 <img src={previewUrl} alt="Imagen original" className="max-h-56 w-full object-contain" />
               ) : (
-                <span className="text-sm text-ink/40">Sin imagen</span>
+                <span className="flex flex-col items-center gap-2 text-sm text-ink-soft">
+                  <ImageIcon size={22} /> Sin imagen
+                </span>
               )}
             </div>
-            <figcaption className="flex items-center justify-between gap-2 px-3 py-2 text-xs text-ink/55">
-              <span>Original</span>
+            <figcaption className="flex items-center justify-between gap-2 px-3 py-2 text-xs text-ink-soft">
+              <span className="font-medium">Original</span>
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
@@ -96,35 +162,42 @@ export default function ImageStep({
             </figcaption>
           </figure>
 
-          <figure className="relative overflow-hidden rounded-2xl border border-ink/10 bg-white">
-            <div className="flex h-56 items-center justify-center bg-ink/5 p-2">
+          <figure className="relative overflow-hidden rounded-2xl border border-line bg-white shadow-card">
+            <div className="relative flex h-56 items-center justify-center overflow-hidden bg-ink/[0.03] p-2">
               {pattern ? (
-                <PatternCanvas pattern={pattern} fit className="max-h-52 w-auto" />
+                <PatternCanvas pattern={pattern} fit className="max-h-52 w-auto rounded" />
               ) : (
-                <span className="text-sm text-ink/40">Sin resultado</span>
+                <span className="flex flex-col items-center gap-2 text-sm text-ink-soft">
+                  <Sparkles size={20} className="text-brand" />
+                  Ajusta y verás la vista previa
+                </span>
               )}
               {busy && (
-                <div className="absolute inset-0 grid place-items-center bg-white/70 backdrop-blur-sm">
-                  <Loader2 className="animate-spin text-brand" size={26} />
+                <div className="absolute inset-0 grid place-items-center bg-white/75 backdrop-blur-sm">
+                  <span className="flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-ink shadow-sm">
+                    <Loader2 className="animate-spin text-brand" size={16} /> Convirtiendo…
+                  </span>
                 </div>
               )}
             </div>
-            <figcaption className="flex items-center justify-between px-3 py-2 text-xs text-ink/55">
-              <span>Resultado</span>
-              {pattern && (
+            <figcaption className="flex items-center justify-between px-3 py-2 text-xs text-ink-soft">
+              <span className="font-medium">Resultado</span>
+              {pattern ? (
                 <span>
                   {pattern.width} × {pattern.height} · {pattern.palette.length} colores
                 </span>
+              ) : (
+                <span>—</span>
               )}
             </figcaption>
           </figure>
         </div>
 
-        <div className="space-y-4 rounded-2xl border border-ink/10 bg-white p-4">
+        <div className="space-y-4 rounded-2xl border border-line bg-white p-4 shadow-card">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-ink/60">Ajustes</h2>
 
           <label className="block text-sm">
-            <span className="flex items-center justify-between text-ink/60">
+            <span className="flex items-center justify-between text-ink-soft">
               Ancho <strong className="text-ink">{options.width} celdas</strong>
             </span>
             <input
@@ -135,10 +208,14 @@ export default function ImageStep({
               onChange={(e) => onChange({ width: Number(e.target.value) })}
               className="mt-2 w-full accent-brand"
             />
+            <span className="mt-0.5 flex justify-between text-[10px] text-ink/40">
+              <span>4</span>
+              <span>128</span>
+            </span>
           </label>
 
           <label className="block text-sm">
-            <span className="flex items-center justify-between text-ink/60">
+            <span className="flex items-center justify-between text-ink-soft">
               Colores <strong className="text-ink">{options.max_colors}</strong>
             </span>
             <input
@@ -149,14 +226,16 @@ export default function ImageStep({
               onChange={(e) => onChange({ max_colors: Number(e.target.value) })}
               className="mt-2 w-full accent-brand"
             />
+            <span className="mt-0.5 flex justify-between text-[10px] text-ink/40">
+              <span>2</span>
+              <span>64</span>
+            </span>
           </label>
 
           <label className="block text-sm">
-            <span className="flex items-center justify-between text-ink/60">
-              Simplificar{" "}
-              <strong className="text-ink">
-                {["Foto", "Suave", "Dibujo", "Cómic"][options.simplify]}
-              </strong>
+            <span className="flex items-center justify-between text-ink-soft">
+              Estilo
+              <strong className="text-ink">{SIMPLIFY_LABELS[options.simplify]}</strong>
             </span>
             <input
               type="range"
@@ -167,36 +246,43 @@ export default function ImageStep({
               onChange={(e) => onChange({ simplify: Number(e.target.value) as 0 | 1 | 2 | 3 })}
               className="mt-2 w-full accent-brand"
             />
+            <span className="mt-0.5 flex justify-between text-[10px] text-ink/40">
+              <span>Foto</span>
+              <span>Cómic</span>
+            </span>
           </label>
 
-          <label className="flex items-center gap-2 text-sm text-ink/70">
-            <input
-              type="checkbox"
-              checked={!!options.outline}
-              onChange={(e) => onChange({ outline: e.target.checked })}
-              className="h-4 w-4 accent-brand"
-            />
-            Contorno oscuro
-          </label>
+          <div className="space-y-2 border-t border-line pt-3">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-soft">
+              <input
+                type="checkbox"
+                checked={!!options.outline}
+                onChange={(e) => onChange({ outline: e.target.checked })}
+                className="h-4 w-4 accent-brand"
+              />
+              Contorno oscuro
+            </label>
 
-          <label className="flex items-center gap-2 text-sm text-ink/70">
-            <input
-              type="checkbox"
-              checked={!!options.remove_background}
-              onChange={(e) => onChange({ remove_background: e.target.checked })}
-              className="h-4 w-4 accent-brand"
-            />
-            Quitar fondo
-          </label>
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-soft">
+              <input
+                type="checkbox"
+                checked={!!options.remove_background}
+                onChange={(e) => onChange({ remove_background: e.target.checked })}
+                className="h-4 w-4 accent-brand"
+              />
+              Quitar fondo
+            </label>
+          </div>
 
-          <p className="flex items-start gap-1.5 rounded-xl bg-paper px-3 py-2 text-xs text-ink/50">
-            <Sparkles size={13} className="mt-0.5 shrink-0" />
-            Para {craft === "hama" ? "HAMA" : "punto de cruz"} conviene poca resolución y 8–16 colores.
+          <p className="flex items-start gap-1.5 rounded-xl bg-paper px-3 py-2 text-xs text-ink-soft">
+            <Sparkles size={13} className="mt-0.5 shrink-0 text-brand" />
+            Para {craft === "hama" ? "HAMA" : "punto de cruz"} conviene poca resolución y 8–16
+            colores.
           </p>
 
-          {error && (
-            <p className="flex items-start gap-2 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
-              <AlertCircle size={16} className="mt-0.5 shrink-0" /> {error}
+          {busy && (
+            <p className="flex items-center gap-1.5 text-xs text-ink-soft" role="status">
+              <Loader2 size={13} className="animate-spin" /> Actualizando la vista previa…
             </p>
           )}
         </div>

@@ -1,4 +1,4 @@
-// Exportación local a PNG (respaldo mientras P2 no expone /patterns/export).
+// Exportación local a PNG (respaldo si /patterns/export no responde).
 import type { PatternData } from "../../api/types";
 import { contrastInk } from "./patternUtils";
 

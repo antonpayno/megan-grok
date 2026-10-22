@@ -1,4 +1,4 @@
-// Paletas completas (Hama / DMC). Intenta el backend de P2 y, si aún no está,
+// Paletas completas (Hama / DMC). Intenta el backend y, si no responde,
 // usa las paletas locales de fallbackPalette.ts sin romper la UI.
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../api/client";
@@ -31,7 +31,7 @@ export function usePalettes(): PalettesState {
         }
       })
       .catch(() => {
-        /* P2 aún no responde: nos quedamos con las paletas locales */
+        /* El backend no responde: nos quedamos con las paletas locales */
       })
       .finally(() => alive && setLoading(false));
     return () => {
