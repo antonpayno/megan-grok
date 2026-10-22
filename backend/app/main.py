@@ -1,15 +1,20 @@
 """Punto de entrada. ARCHIVO COMPARTIDO: todos los routers ya están registrados,
 no debería hacer falta tocarlo. Arranque:  uvicorn app.main:app --reload  (desde backend/)
+
+Si existe frontend/dist, tamén serve a SPA compilada (demo nun só proceso).
 """
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from .config import CORS_ORIGINS, MEDIA_DIR
+from .config import BASE_DIR, CORS_ORIGINS, MEDIA_DIR
 from .db import init_db
 from .routers import auth, patterns, posts, search, users
+
+FRONTEND_DIST = BASE_DIR.parent / "frontend" / "dist"
 
 
 @asynccontextmanager
@@ -41,3 +46,28 @@ app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 @app.get("/api/health")
 def health():
     return {"ok": True}
+
+
+# Demo dun só proceso: se o frontend está compilado, sérveo e deixa que React
+# xestione as rutas (recarga en /p/28, /u/lucia, etc.).
+if FRONTEND_DIST.is_dir():
+    assets_dir = FRONTEND_DIST / "assets"
+    if assets_dir.is_dir():
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+    dist_root = FRONTEND_DIST.resolve()
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def spa_fallback(full_path: str):
+        first_segment = full_path.split("/", 1)[0]
+        if first_segment in {"api", "media"}:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Not Found")
+
+        candidate = (dist_root / full_path).resolve()
+        if (
+            full_path
+            and candidate.is_file()
+            and candidate.is_relative_to(dist_root)
+        ):
+            return FileResponse(candidate)
+        return FileResponse(dist_root / "index.html")
