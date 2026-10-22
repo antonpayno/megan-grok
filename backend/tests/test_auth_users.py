@@ -1,6 +1,10 @@
 """Tests de auth, perfiles y follows (Persona 1)."""
+import os
+import subprocess
+import sys
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
+from pathlib import Path
 
 import pytest
 from PIL import Image
@@ -488,3 +492,53 @@ def test_avatar_rechaza_mais_de_5mb(client, make_user, monkeypatch, tmp_path):
 
     assert r.status_code == 400
     assert r.json()["detail"] == "La imagen no puede superar 5 MB"
+
+
+# ---------- seed (integración con proceso real) ----------
+
+def test_seed_reset_e_idempotente(tmp_path):
+    backend = Path(__file__).resolve().parents[1]
+    db_path = tmp_path / "seed.db"
+    env = {
+        **os.environ,
+        "DATABASE_URL": f"sqlite:///{db_path.as_posix()}",
+        "PYTHONIOENCODING": "utf-8",
+    }
+
+    first = subprocess.run(
+        [sys.executable, "-m", "app.seed", "--reset"],
+        cwd=backend,
+        env=env,
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=120,
+    )
+    assert first.returncode == 0, first.stderr
+    assert "8 usuarios" in first.stdout
+    assert "30 posts" in first.stdout
+    assert db_path.exists() and db_path.stat().st_size > 0
+
+    second = subprocess.run(
+        [sys.executable, "-m", "app.seed"],
+        cwd=backend,
+        env=env,
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=120,
+    )
+    assert second.returncode == 0, second.stderr
+    assert "ya tiene datos" in second.stdout
+
+    third = subprocess.run(
+        [sys.executable, "-m", "app.seed", "--reset"],
+        cwd=backend,
+        env=env,
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=120,
+    )
+    assert third.returncode == 0, third.stderr
+    assert "8 usuarios" in third.stdout

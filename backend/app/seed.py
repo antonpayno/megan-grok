@@ -408,7 +408,13 @@ def _reset_database() -> None:
     if DATABASE_URL.startswith("sqlite:///"):
         path = Path(DATABASE_URL.removeprefix("sqlite:///"))
         if path.exists():
-            path.unlink()
+            try:
+                path.unlink()
+            except PermissionError as exc:
+                raise SystemExit(
+                    f"No se pudo borrar {path}: está abierto por otro proceso. "
+                    "Cierra uvicorn (o el proceso que use la BD) e inténtalo de nuevo."
+                ) from exc
     init_db()
 
 
