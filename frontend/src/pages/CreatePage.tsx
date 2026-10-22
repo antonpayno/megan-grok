@@ -143,7 +143,9 @@ export default function CreatePage() {
     if (stored.options) setOptions(stored.options);
     if (stored.pattern && stored.pattern.cells.some((c) => c >= 0)) {
       editorRef.current.load(stored.pattern, { resetHistory: true });
-      setStep(stored.step === "image" ? "image" : "editor");
+      // El paso "imagen" no se puede restaurar (el File no se guarda): si hay patrón,
+      // volvemos directamente al editor.
+      setStep("editor");
     }
   }, [remixParam]);
 
