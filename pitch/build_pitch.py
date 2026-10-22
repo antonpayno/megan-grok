@@ -4,6 +4,10 @@ Uso (desde la raíz del repo, en Windows):
 
     backend\\.venv\\Scripts\\python.exe pitch\\build_pitch.py
 
+Los textos reflejan el estado final del proyecto: motor OpenCV + k-means en
+CIELAB, editor con deshacer/simetría, modo hacer con progreso, red social con
+búsqueda sin acentos y #tags, remix y 76 tests en verde.
+
 Lee las capturas de ``pitch/img/``. Si falta alguna, dibuja un recuadro gris
 con el texto "Captura: <nombre>" para sustituirla más tarde. Al volver a
 ejecutar el script con las capturas ya en su sitio, aparecen solas.
@@ -335,9 +339,9 @@ def slide_cover(prs) -> None:
     add_notes(
         s,
         "≈ 15 s — Buenas, somos [Nombre del equipo] y esto es Pixel Pattern. "
-        "En cuatro minutos os enseñamos cómo convertir una foto en un patrón de "
-        "HAMA o punto de cruz y cómo compartirlo con una comunidad que los hace. "
-        "Vamos al lío.",
+        "En cuatro minutos os enseñamos cómo convertir una foto en un patrón real "
+        "de HAMA o punto de cruz, cómo hacerlo con progreso y cómo compartirlo y "
+        "remezclarlo con la comunidad. Vamos al lío.",
     )
 
 
@@ -351,7 +355,7 @@ def slide_problem(prs) -> None:
     rows = [
         "Contar cuentas a mano",
         "Colores que no existen en tu marca",
-        "Patrones dispersos, sin progreso",
+        "Patrones en imágenes, sin progreso ni materiales",
     ]
     for i, text in enumerate(rows):
         y = 2.55 + i * 0.92
@@ -365,10 +369,12 @@ def slide_problem(prs) -> None:
     card_x, card_y, card_w, card_h = 8.18, 2.45, 4.3, 3.6
     add_rect(s, card_x, card_y, card_w, card_h, fill=WHITE, line=BORDER,
              radius=0.04, shadow=True)
-    add_text(s, "4.800", card_x + 0.36, card_y + 0.3, card_w - 0.7, 1.05,
-             size=62, color=ACCENT, bold=True, line_spacing=0.9)
-    add_text(s, "cuentas en 80 × 60", card_x + 0.36, card_y + 1.35,
+    add_text(s, "16.384", card_x + 0.36, card_y + 0.3, card_w - 0.7, 1.05,
+             size=54, color=ACCENT, bold=True, line_spacing=0.9)
+    add_text(s, "celdas en 128 × 128", card_x + 0.36, card_y + 1.35,
              card_w - 0.7, 0.3, size=14, color=MUTED)
+    add_text(s, "hasta 64 colores reales", card_x + 0.36, card_y + 1.67,
+             card_w - 0.7, 0.25, size=10.5, color=MUTED)
 
     # Rejilla decorativa: un patrón a medio hacer.
     gx, gy, cell, gap = card_x + 0.38, card_y + 2.02, 0.155, 0.045
@@ -382,11 +388,12 @@ def slide_problem(prs) -> None:
     add_footer(s, 2)
     add_notes(
         s,
-        "≈ 30 s — Si alguna vez habéis hecho un patrón desde una foto, conocéis "
+        "≈ 25 s — Si alguna vez habéis hecho un patrón desde una foto, conocéis "
         "el dolor: cuentas cuadraditos a mano y buscas un color que se parezca... "
         "y resulta que no existe en Hama ni en DMC. Y lo que hay en Pinterest o "
-        "en blogs está en una imagen, sin lista de materiales ni progreso. El "
-        "patrón es bonito; hacerlo es otra historia.",
+        "en blogs está en una imagen: sin lista de materiales, sin progreso y sin "
+        "saber cuántas placas necesitas. Un patrón de 128 × 128 son 16.384 celdas. "
+        "El patrón es bonito; hacerlo es otra historia.",
     )
 
 
@@ -398,9 +405,9 @@ def slide_solution(prs) -> None:
     add_rule(s)
 
     cards = [
-        ("CREA", "Foto o dibujo → patrón con colores Hama y DMC."),
-        ("HAZ", "Edita, exporta e imprime."),
-        ("COMPARTE", "Feed, perfiles y remix."),
+        ("CREA", "Foto o dibujo → patrón con paleta real Hama o DMC."),
+        ("HAZ", "Editor con deshacer y simetría, progreso y materiales."),
+        ("COMPARTE", "Feed, búsqueda sin acentos, #tags y remix."),
     ]
     for i, (label, body) in enumerate(cards):
         y = 2.5 + i * 1.22
@@ -415,11 +422,11 @@ def slide_solution(prs) -> None:
     add_footer(s, 3)
     add_notes(
         s,
-        "≈ 25 s — Pixel Pattern junta las tres piezas que faltaban. Conviertes "
+        "≈ 20 s — Pixel Pattern junta las tres piezas que faltaban. Conviertes "
         "una foto o un dibujo en un patrón con colores reales de fabricante; lo "
-        "editas cuenta a cuenta y te llevas un PDF con la lista de materiales; y "
-        "lo publicas en una comunidad con feed, perfiles y remix. Crear, hacer y "
-        "compartir, por fin juntos.",
+        "editas cuenta a cuenta, con deshacer y simetría, y te llevas la lista de "
+        "materiales y el PDF; y lo publicas en una comunidad con feed, perfiles, "
+        "búsqueda y remix. Crear, hacer y compartir, por fin juntos.",
     )
 
 
@@ -432,8 +439,8 @@ def slide_demo_convert(prs) -> None:
 
     steps = [
         "Sube tu foto",
+        "Ancho 4–128 y 2–64 colores",
         "Simplifica a dibujo",
-        "Colores reales Hama / DMC",
         "Retoca cuenta a cuenta",
     ]
     rail_x = 1.16
@@ -451,15 +458,21 @@ def slide_demo_convert(prs) -> None:
         add_text(s, text, 1.78, cy - 0.05, 4.25, 0.52, size=18, color=INK,
                  anchor=MSO_ANCHOR.MIDDLE)
 
+    add_rect(s, 1.78, 6.0, 4.1, 0.42, fill=ACCENT_SOFT, radius=0.5)
+    add_text(s, "OpenCV + k-means CIELAB · 0,3–0,6 s", 1.78, 6.0, 4.1, 0.42,
+             size=10.5, color=ACCENT, bold=True,
+             align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+
     add_screenshot(s, "foto-a-patron.png", 6.33, 1.52, 6.17, 4.98)
     add_footer(s, 4)
     add_notes(
         s,
-        "≈ 30 s — Aquí está el corazón del producto. Subes una foto y, con un "
-        "par de ajustes, la simplificamos a un dibujo: menos colores y formas más "
-        "limpias. Después la pasamos a la paleta real de Hama o DMC, así que cada "
-        "color se puede comprar. Y si algo no te convence, cambias las cuentas "
-        "una a una en el editor.",
+        "≈ 45 s — Aquí está el corazón del producto. Subes una foto y, con un "
+        "par de ajustes, la simplificamos a un dibujo: eliges ancho, hasta 128 "
+        "celdas, y entre 2 y 64 colores. Después la pasamos a la paleta real de "
+        "Hama o DMC, así que cada color se puede comprar. En una foto de demo "
+        "tarda entre 0,3 y 0,6 segundos a 128 píxeles. Y si algo no te convence, "
+        "cambias las cuentas una a una en el editor.",
     )
 
 
@@ -473,11 +486,11 @@ def slide_engine(prs) -> None:
     steps = [
         ("Foto", ""),
         ("Suavizado", "OpenCV"),
-        ("Rejilla", ""),
+        ("Rejilla", "área"),
         ("k-means", "CIELAB"),
-        ("Paleta real", "Hama · DMC"),
-        ("Limpieza", "píxeles sueltos"),
-        ("Patrón", ""),
+        ("Paleta real", "Hama 60 · DMC 190"),
+        ("Limpieza", "ruido y aislados"),
+        ("Patrón", "PatternData"),
     ]
     cw, ch = 1.4, 1.8
     gap = (CONTENT_W - 7 * cw) / 6
@@ -512,19 +525,24 @@ def slide_engine(prs) -> None:
             {"t": " — distancia de color como la percibe el ojo.",
              "color": INK},
         ],
-        MARGIN + 0.36, 4.85, CONTENT_W - 0.72, 1.0, size=16.5,
+        MARGIN + 0.36, 4.85, 7.1, 1.0, size=16.5,
     )
+    add_text(s, "60 colores Hama · 190 DMC\nContorno Canny · fondo ΔE",
+             8.55, 4.85, 3.85, 1.0, size=11.5, color=MUTED,
+             align=PP_ALIGN.RIGHT, anchor=MSO_ANCHOR.MIDDLE,
+             line_spacing=1.2)
 
     add_footer(s, 5)
     add_notes(
         s,
-        "≈ 40 s — Por dentro es una cadena de pasos. Suavizamos con OpenCV para "
-        "quitar ruido; reducimos a la rejilla; agrupamos los colores con k-means "
-        "en espacio CIELAB, no en RGB. ¿Por qué? Porque CIELAB mide la distancia "
-        "de color como la percibe el ojo: dos rojos casi iguales quedan cerca, y "
-        "no nos llevamos un azul raro solo porque lo digan los números. Después "
-        "emparejamos con la paleta real del fabricante, limpiamos píxeles sueltos "
-        "y listo.",
+        "≈ 30 s — Por dentro es una cadena de pasos. Suavizamos con OpenCV "
+        "(bilateral o mean-shift) para quitar ruido; reducimos a la rejilla; "
+        "agrupamos los colores con k-means en espacio CIELAB, no en RGB. ¿Por qué? "
+        "Porque CIELAB mide la distancia de color como la percibe el ojo: dos "
+        "rojos casi iguales quedan cerca, y no nos llevamos un azul raro solo "
+        "porque lo digan los números. Después emparejamos con la paleta real: 60 "
+        "colores Hama y 190 DMC. Limpiamos ruido y celdas aisladas, añadimos "
+        "contorno Canny si hace falta y sale un PatternData listo para editar.",
     )
 
 
@@ -538,10 +556,10 @@ def slide_demo_make(prs) -> None:
     add_screenshot(s, "hacer.png", MARGIN, 1.78, 6.17, 4.68)
 
     rows = [
-        "Modo por color",
-        "Progreso cuenta a cuenta",
-        "Lista de materiales y placas",
-        "PDF imprimible",
+        "Progreso persistente",
+        "Modo por color y por fila",
+        "Cuentas y placas 29×29",
+        "PDF A4 imprimible",
     ]
     for i, text in enumerate(rows):
         y = 2.55 + i * 0.86
@@ -552,11 +570,12 @@ def slide_demo_make(prs) -> None:
     add_footer(s, 6)
     add_notes(
         s,
-        "≈ 30 s — Una vez publicado, cualquiera puede abrirlo en modo hacer. Se "
+        "≈ 45 s — Una vez publicado, cualquiera puede abrirlo en modo hacer. Se "
         "sigue color por color, que es como se trabaja de verdad: pones todas las "
-        "cuentas de un color y no vas cambiando de bote. Marcas las que llevas, ves "
-        "el progreso y tienes la lista de materiales con las cuentas y las placas. "
-        "Al terminar, exportas el PDF y lo imprimes.",
+        "cuentas de un color y no vas cambiando de bote. Marcas celdas o una fila "
+        "entera, ves el progreso y la lista de materiales con cuentas y placas de "
+        "29 × 29. El progreso se guarda en el navegador: si cierras, vuelves donde "
+        "lo dejaste. Y al terminar, exportas el PDF A4 con la carta y la leyenda.",
     )
 
 
@@ -571,10 +590,10 @@ def slide_community(prs) -> None:
     add_screenshot(s, "buscador.png", 6.81, 2.3, 5.68, 3.44)
 
     pills = [
-        ("Feed tipo Instagram", 2.05),
-        ("Likes, guardados, comentarios", 2.98),
-        ("Seguir y remix", 1.86),
-        ("Buscador: perfiles, patrones y #tags", 4.15),
+        ("Feed Explorar / Siguiendo", 2.45),
+        ("Likes, guardados y comentarios", 3.05),
+        ("Seguir y remix", 1.75),
+        ("Buscador sin acentos + #tags", 3.55),
     ]
     x = MARGIN
     for text, width in pills:
@@ -587,11 +606,12 @@ def slide_community(prs) -> None:
     add_footer(s, 7)
     add_notes(
         s,
-        "≈ 30 s — La parte social es intencionadamente familiar: feed tipo "
-        "Instagram, con likes, guardados y comentarios; perfiles a los que seguir; "
-        "y un botón de remix para adaptar el patrón de otra persona. El buscador "
-        "encuentra perfiles, patrones y hashtags: buscas gato o pixel art y "
-        "encuentras ideas y gente a la que seguir. La comunidad es lo que hace "
+        "≈ 35 s — La parte social es intencionadamente familiar: feed con "
+        "«Explorar» y «Siguiendo», likes, guardados, comentarios y perfiles a los "
+        "que seguir. Cualquier patrón se abre en modo hacer o se remezcla con el "
+        "botón Remix. Y el buscador encuentra perfiles, patrones y #tags sin "
+        "depender de los acentos: si buscas «corazon» aparece «Corazón pixelado», "
+        "y «#gato» hace búsqueda exacta de tag. La comunidad es lo que hace "
         "crecer el catálogo.",
     )
 
@@ -606,19 +626,19 @@ def slide_tech(prs) -> None:
     boxes = [
         {
             "label": "FRONTEND",
-            "tech": "React · TypeScript · Tailwind",
+            "tech": "React 18 · TypeScript\nTailwind · Vite",
             "fill": WHITE, "line": BORDER, "fg": INK, "label_color": ACCENT,
             "mark": (ACCENT, ACCENT_LIGHT, INK, ACCENT),
         },
         {
             "label": "API + BD",
-            "tech": "FastAPI · SQLite · JWT",
+            "tech": "FastAPI · SQLite\nJWT · REST",
             "fill": ACCENT_SOFT, "line": None, "fg": INK, "label_color": ACCENT,
             "mark": (ACCENT, INK, ACCENT_LIGHT, ACCENT_DARK),
         },
         {
             "label": "MOTOR DE PATRONES",
-            "tech": "NumPy · OpenCV\nscikit-learn · ReportLab",
+            "tech": "OpenCV · NumPy\nscikit-learn · ReportLab",
             "fill": INK, "line": None, "fg": WHITE, "label_color": ACCENT_LIGHT,
             "mark": (ACCENT, ACCENT_LIGHT, ACCENT_LIGHT, ACCENT),
         },
@@ -641,17 +661,18 @@ def slide_tech(prs) -> None:
     add_arrow(s, 4.31, 3.55, 0.57, 0.3, fill=RGBColor.from_string("E9BEC8"))
     add_arrow(s, 8.45, 3.55, 0.57, 0.3, fill=RGBColor.from_string("E9BEC8"))
 
-    add_text(s, "Un contrato de datos común: PatternData", MARGIN, 5.4,
-             CONTENT_W, 0.35, size=13, color=MUTED, align=PP_ALIGN.CENTER)
+    add_text(s, "Un contrato de datos común: PatternData\n76 tests en verde · 5 ramas · una sola API",
+             MARGIN, 5.4, CONTENT_W, 0.65, size=13, color=MUTED,
+             align=PP_ALIGN.CENTER, line_spacing=1.35)
 
     add_footer(s, 8)
     add_notes(
         s,
-        "≈ 25 s — Técnicamente no hay magia: React y TypeScript en el frontend, "
-        "FastAPI y SQLite detrás, y un motor en Python con NumPy, OpenCV y "
-        "scikit-learn. El PDF se genera con ReportLab. Todo habla por una API REST "
-        "con el mismo contrato de datos, PatternData. Eso nos permitió construir en "
-        "paralelo sin pisarnos.",
+        "≈ 20 s — Técnicamente no hay magia: React 18 y TypeScript en el "
+        "frontend, FastAPI y SQLite detrás, y un motor en Python con NumPy, "
+        "OpenCV, scikit-learn y ReportLab para el PDF. Todo habla por una API REST "
+        "con el mismo contrato, PatternData. Eso nos permitió construir en "
+        "paralelo sin pisarnos y tener 76 tests en verde.",
     )
 
 
@@ -665,6 +686,7 @@ def slide_team(prs) -> None:
     centers = [1.55, 4.11, 6.66, 9.22, 11.78]
     add_rect(s, centers[0], 2.94, centers[-1] - centers[0], 0.012, fill=BORDER)
     labels = ["Core", "Motor", "Social", "Editor", "Social UI"]
+    line_counts = ["1.427", "1.534", "1.142", "3.412", "3.390"]
     for i, (cx, label) in enumerate(zip(centers, labels)):
         add_rect(s, cx - 0.36, 2.58, 0.72, 0.72, fill=ACCENT, radius=0.5)
         add_text(s, str(i + 1), cx - 0.36, 2.58, 0.72, 0.72, size=16,
@@ -672,6 +694,12 @@ def slide_team(prs) -> None:
                  anchor=MSO_ANCHOR.MIDDLE)
         add_text(s, label, cx - 0.85, 3.45, 1.7, 0.3, size=11.5, color=INK,
                  bold=True, align=PP_ALIGN.CENTER)
+        add_text(s, f"{line_counts[i]} líneas", cx - 0.85, 3.74, 1.7, 0.25,
+                 size=9.5, color=MUTED, align=PP_ALIGN.CENTER)
+
+    add_text(s, "10.905 líneas propias + 834 compartidas · 76 tests en verde",
+             MARGIN, 4.06, CONTENT_W, 0.28, size=10.5, color=MUTED,
+             align=PP_ALIGN.CENTER)
 
     principles = [
         "Contrato de API desde el minuto 0",
@@ -690,10 +718,11 @@ def slide_team(prs) -> None:
     add_footer(s, 9)
     add_notes(
         s,
-        "≈ 25 s — Y aquí está la parte de la que estamos más orgullosos: cinco "
+        "≈ 20 s — Y aquí está la parte de la que estamos más orgullosos: cinco "
         "personas, cinco ramas y un contrato de API cerrado desde el minuto cero. "
         "Cada persona era dueña de sus archivos, así que los merges salieron "
-        "limpios. Trabajamos con agentes de IA de opencode: nos repartimos el "
+        "limpios. En total, 10.905 líneas propias y 834 compartidas, con 76 tests "
+        "en verde. Trabajamos con agentes de IA de opencode: nos repartimos el "
         "producto, no los conflictos de Git.",
     )
 
@@ -706,7 +735,7 @@ def slide_next(prs) -> None:
     add_rule(s)
 
     cards = [
-        ("01", "Más marcas", "Cuentas e hilos de más fabricantes"),
+        ("01", "Más marcas", "Paletas de más fabricantes"),
         ("02", "App móvil", "Cámara integrada"),
         ("03", "Patrones 3D", "HAMA en relieve"),
         ("04", "Tienda de kits", "Materiales exactos"),
@@ -727,10 +756,10 @@ def slide_next(prs) -> None:
     add_footer(s, 10)
     add_notes(
         s,
-        "≈ 20 s — ¿Y después? Más marcas de cuentas e hilos, una app móvil con "
-        "cámara, patrones 3D para HAMA y, a más largo plazo, una tienda de kits con "
-        "los materiales exactos de cada patrón. Cerrar el círculo entre la idea y "
-        "la manualidad.",
+        "≈ 10 s — ¿Y después? Más marcas y paletas, una app móvil con cámara, "
+        "patrones en 3D para HAMA y, a más largo plazo, una tienda de kits con los "
+        "materiales exactos de cada patrón. Cerrar el círculo entre la idea y la "
+        "manualidad.",
     )
 
 
@@ -744,7 +773,7 @@ def slide_closing(prs) -> None:
     add_text(s, "¡Gracias!", MARGIN, 2.18, 7.6, 1.1, size=60, color=ACCENT,
              bold=True)
     add_rect(s, MARGIN + 0.02, 3.68, 1.15, 0.07, fill=ACCENT)
-    add_text(s, "Demo y código en el QR.", MARGIN + 0.02, 4.02, 7.0, 0.4,
+    add_text(s, "Demo, código y tests en el QR.", MARGIN + 0.02, 4.02, 7.0, 0.4,
              size=18, color=INK)
     add_text(s, "[enlace a la demo]", MARGIN + 0.02, 4.5, 7.0, 0.35,
              size=13, color=MUTED)
@@ -766,7 +795,8 @@ def slide_closing(prs) -> None:
         s,
         "≈ 15 s — Esto es Pixel Pattern: una forma más rápida de pasar de una foto "
         "a algo que puedes hacer con las manos, y una comunidad para compartirlo. "
-        "El código y la demo están en el QR. Gracias, y ahora... ¡a hacer patrones!",
+        "El código, la demo y los 76 tests están en el QR. Gracias, y ahora... "
+        "¡a hacer patrones!",
     )
 
 
@@ -813,6 +843,9 @@ def main() -> None:
                  "buscador.png"):
         state = "OK" if (IMG_DIR / name).exists() else "FALTA (placeholder)"
         print(f"  - {name:<20} {state}")
+    print()
+    print("Datos usados en el deck: 76 tests · 10.905 líneas propias + 834 compartidas")
+    print("Conversión de referencia: 0,3–0,6 s a 128 px")
     print()
     print("Sustituye los textos entre corchetes de la portada y el cierre.")
 
