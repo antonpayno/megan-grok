@@ -62,8 +62,8 @@ def test_convert_bicolor_uses_two_colors(client):
     response = _post(client, _bicolor(), max_colors=2)
     assert response.status_code == 200
     pattern = PatternData(**response.json())
-    assert len(pattern.palette) <= 2
-    assert len({c for c in pattern.cells if c >= 0}) <= 2
+    assert len(pattern.palette) == 2
+    assert len({c for c in pattern.cells if c >= 0}) == 2
 
 
 def test_convert_colors_belong_to_palette(client):
