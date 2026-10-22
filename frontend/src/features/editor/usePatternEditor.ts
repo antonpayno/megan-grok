@@ -3,6 +3,7 @@ import { useCallback, useMemo, useReducer, useRef, useState } from "react";
 import type { PaletteColor, PatternData } from "../../api/types";
 import {
   addColor as addColorToPattern,
+  linePoints,
   normalizePattern,
   removeColor as removeColorFromPattern,
   resizePattern,
@@ -55,6 +56,8 @@ export interface PatternEditor {
   /** Llamar al soltar el puntero. */
   endStroke: () => void;
   paint: (x: number, y: number) => void;
+  /** Pinta la línea entre dos celdas (trazo continuo sin copiar el array por celda). */
+  paintPath: (x0: number, y0: number, x1: number, y1: number) => void;
   fillAt: (x: number, y: number) => void;
   pickAt: (x: number, y: number) => void;
   addColor: (color: PaletteColor) => number;
@@ -125,28 +128,40 @@ export function usePatternEditor(initial: PatternData): PatternEditor {
     bump();
   }, [commit]);
 
-  const paint = useCallback(
-    (x: number, y: number) => {
+  const paintPoints = useCallback(
+    (points: { x: number; y: number }[]) => {
       const p = patternRef.current;
-      if (tool === "picker") return;
-      if (x < 0 || y < 0 || x >= p.width || y >= p.height) return;
+      if (tool === "picker" || tool === "pan") return;
       const value = tool === "eraser" ? -1 : colorIndex;
       if (value >= p.palette.length) return; // no hay color activo válido
-      const at = (cx: number, cy: number) => cy * p.width + cx;
       let cells: number[] | null = null;
       const set = (cx: number, cy: number) => {
         if (cx < 0 || cy < 0 || cx >= p.width || cy >= p.height) return;
-        const i = at(cx, cy);
+        const i = cy * p.width + cx;
         if (p.cells[i] === value) return;
         if (!cells) cells = [...p.cells];
         cells[i] = value;
       };
-      set(x, y);
-      if (symmetry) set(p.width - 1 - x, y);
+      for (const point of points) {
+        set(point.x, point.y);
+        if (symmetry) set(p.width - 1 - point.x, point.y);
+      }
       if (!cells) return;
       commit({ ...p, cells });
     },
     [colorIndex, commit, symmetry, tool],
+  );
+
+  const paint = useCallback(
+    (x: number, y: number) => paintPoints([{ x, y }]),
+    [paintPoints],
+  );
+
+  const paintPath = useCallback(
+    (x0: number, y0: number, x1: number, y1: number) => {
+      paintPoints(linePoints(x0, y0, x1, y1));
+    },
+    [paintPoints],
   );
 
   const fillAt = useCallback(
@@ -266,6 +281,7 @@ export function usePatternEditor(initial: PatternData): PatternEditor {
       beginStroke,
       endStroke,
       paint,
+      paintPath,
       fillAt,
       pickAt,
       addColor,
@@ -276,7 +292,7 @@ export function usePatternEditor(initial: PatternData): PatternEditor {
     }),
     [
       pattern, tool, setTool, colorIndex, setColorIndex, symmetry, setSymmetry,
-      historyTick, undo, redo, beginStroke, endStroke, paint, fillAt, pickAt,
+      historyTick, undo, redo, beginStroke, endStroke, paint, paintPath, fillAt, pickAt,
       addColor, removeColor, resize, clear, load,
     ],
   );

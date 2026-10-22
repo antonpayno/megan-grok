@@ -1,6 +1,6 @@
 // Conversión imagen -> patrón EN EL NAVEGADOR.
-// Se usa como respaldo mientras P2 no implementa POST /api/patterns/convert
-// (el flujo intenta primero la API y solo cae aquí si falla).
+// Respaldo de emergencia: el flujo intenta primero POST /api/patterns/convert
+// y solo cae aquí si la API falla (la UI muestra un aviso visible).
 import type { ConvertOptions, PaletteColor, PatternData } from "../../api/types";
 import { fallbackPaletteFor } from "./fallbackPalette";
 import { colorDistance, hexToRgb, nearestColorIndex, rgbToHex } from "./patternUtils";

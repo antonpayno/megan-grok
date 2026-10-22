@@ -1,5 +1,6 @@
 // Paso 1 del flujo de creación: técnica, lienzo en blanco o desde imagen.
-import { Camera, Image as ImageIcon, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { Camera, Image as ImageIcon, Sparkles, UploadCloud } from "lucide-react";
 import type { Craft } from "../../api/types";
 import { PRESET_SIZES } from "./fallbackPalette";
 
@@ -8,6 +9,8 @@ export interface StartStepProps {
   onCraft: (c: Craft) => void;
   onBlank: (width: number, height: number) => void;
   onPickImage: () => void;
+  /** Arrastrar y soltar una imagen directamente. */
+  onFile?: (file: File) => void;
   draftInfo?: string | null;
   onResumeDraft?: () => void;
 }
@@ -17,10 +20,12 @@ export default function StartStep({
   onCraft,
   onBlank,
   onPickImage,
+  onFile,
   draftInfo,
   onResumeDraft,
 }: StartStepProps) {
   const presets = PRESET_SIZES[craft];
+  const [dragging, setDragging] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -97,7 +102,24 @@ export default function StartStep({
             </div>
           </div>
 
-          <div className="flex flex-col rounded-2xl border border-ink/10 bg-white p-4">
+          <div
+            className={`flex flex-col rounded-2xl border bg-white p-4 transition ${
+              dragging ? "border-brand ring-2 ring-brand/25" : "border-ink/10"
+            }`}
+            onDragOver={(e) => {
+              if (!onFile) return;
+              e.preventDefault();
+              setDragging(true);
+            }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => {
+              if (!onFile) return;
+              e.preventDefault();
+              setDragging(false);
+              const dropped = e.dataTransfer.files?.[0];
+              if (dropped && dropped.type.startsWith("image/")) onFile(dropped);
+            }}
+          >
             <h3 className="font-semibold">Desde imagen</h3>
             <p className="mt-1 text-sm text-ink/55">
               Sube una foto y la convertimos en un dibujo con pocos colores reales.
@@ -105,17 +127,22 @@ export default function StartStep({
             <button
               type="button"
               onClick={onPickImage}
-              className="mt-3 flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ink/20 px-4 py-6 text-ink/60 transition hover:border-brand hover:text-brand"
+              className={`mt-3 flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-6 transition ${
+                dragging
+                  ? "border-brand bg-brand/5 text-brand"
+                  : "border-ink/20 text-ink/60 hover:border-brand hover:text-brand"
+              }`}
             >
               <span className="flex items-center gap-2">
-                <ImageIcon size={20} /> Elegir imagen
+                {dragging ? <UploadCloud size={20} /> : <ImageIcon size={20} />}
+                {dragging ? "Suelta la foto aquí" : "Elegir imagen"}
               </span>
               <span className="flex items-center gap-1 text-xs">
                 <Camera size={13} /> o haz una foto desde el móvil
               </span>
             </button>
             <p className="mt-2 flex items-center gap-1 text-xs text-ink/40">
-              <Sparkles size={12} /> JPG, PNG, WebP · hasta 128 × 128 celdas
+              <Sparkles size={12} /> JPG, PNG, WebP · arrastra una foto o hasta 10 MB
             </p>
           </div>
         </div>

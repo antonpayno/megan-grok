@@ -1,5 +1,5 @@
-// Paletas locales de respaldo mientras P2 no expone GET /api/palettes.
-// Cuando `api.palettes()` funcione, se usan las del backend (ver usePalettes.ts).
+// Paletas locales de respaldo si GET /api/palettes no responde.
+// Cuando la API funciona, se usan las del backend (ver usePalettes.ts).
 import type { Craft, Palette, PaletteColor } from "../../api/types";
 
 /** Símbolos para las cartas de punto de cruz (uno por color, únicos). */
