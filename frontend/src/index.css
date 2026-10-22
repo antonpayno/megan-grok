@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+/* Tokens de diseño compartidos. Persona 5 es dueña del estilo global;
+   el resto usa estas clases/variables en vez de inventar colores. */
+@theme {
+  --color-brand: #e8456b;
+  --color-brand-dark: #c22e52;
+  --color-ink: #1f1d2b;
+  --color-paper: #fbf8f4;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
