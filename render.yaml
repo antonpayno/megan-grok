@@ -1,0 +1,29 @@
+# Blueprint de Render: un solo servicio Docker sirve la SPA y la API.
+# https://render.com/deploy?repo=https://github.com/antonpayno/megan-grok
+services:
+  - type: web
+    name: pixel-pattern
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHONUNBUFFERED
+        value: "1"
+
+# Para que los datos sobrevivan a reinicios hace falta plan de pago + disco.
+# Cambia `plan: free` por `plan: starter` y añade:
+#
+#    disk:
+#      name: data
+#      mountPath: /data
+#      sizeGB: 1
+#    envVars:
+#      - key: DATABASE_URL
+#        value: sqlite:////data/app.db
+#      - key: MEDIA_DIR
+#        value: /data/media
