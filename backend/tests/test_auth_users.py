@@ -290,6 +290,36 @@ def test_followers_y_following_mas_recientes_primero(client, session, make_user)
     assert set(followers.json()[0]) == {"id", "username", "display_name", "avatar_url"}
 
 
+# ---------- seed ----------
+
+def test_seed_patrones_validos_y_en_rango():
+    from app import seed
+
+    assert len(seed.USERS) == 8
+    assert len(seed.POSTS) == 30
+    assert {u[0] for u in seed.USERS} == {p[3] for p in seed.POSTS}
+
+    for design, scale, craft, author, title, tags in seed.POSTS:
+        pattern = seed._build_pattern(design, craft, scale)
+        assert pattern.craft == craft
+        assert 12 <= pattern.width <= 40
+        assert 12 <= pattern.height <= 40
+        assert len(pattern.cells) == pattern.width * pattern.height
+        assert 1 <= len(pattern.palette) <= 64
+        assert 1 <= len(tags) <= 10
+
+
+def test_seed_usa_ids_de_paletas_reales():
+    from app import seed
+
+    hama = seed._build_pattern("heart", "hama", 1)
+    dmc = seed._build_pattern("heart", "cross_stitch", 1)
+
+    assert hama.palette[0].id == "H11"  # Rosa Hama
+    assert dmc.palette[0].id == "605"  # Rosa DMC
+    assert hama.palette[0].hex == dmc.palette[0].hex == "#FF5D8F"
+
+
 # ---------- avatar ----------
 
 def _png_bytes(size: tuple[int, int] = (640, 480)) -> bytes:
