@@ -1,4 +1,5 @@
-// PROPIETARIO: Persona 5. Registro
+import { AuthForm } from "../features/social/AuthForm";
+
 export default function RegisterPage() {
-  return <div className="p-8 text-gray-500">TODO Persona 5: Registro</div>;
+  return <AuthForm mode="register" />;
 }

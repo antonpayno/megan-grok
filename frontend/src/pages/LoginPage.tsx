@@ -1,4 +1,5 @@
-// PROPIETARIO: Persona 5. Login
+import { AuthForm } from "../features/social/AuthForm";
+
 export default function LoginPage() {
-  return <div className="p-8 text-gray-500">TODO Persona 5: Login</div>;
+  return <AuthForm mode="login" />;
 }
