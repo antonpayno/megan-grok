@@ -6,11 +6,19 @@ from __future__ import annotations
 
 import io
 
+import numpy as np
 import pytest
 from PIL import Image, ImageDraw
 
 from app.engine import palettes
-from app.schemas import PaletteColor, PatternData
+from app.engine.convert import (
+    _despeckle,
+    _merge_similar,
+    _outline,
+    _symbols,
+)
+from app.engine.export import _tile_positions, render_pdf
+from app.schemas import Palette, PaletteColor, PatternData
 
 
 def _png(image: Image.Image) -> bytes:
@@ -231,3 +239,132 @@ def test_default_palette_depends_on_craft(client, craft, expected):
     palette = palettes.get_palette(None, craft)
     assert palette.id == expected
     assert {color.id for color in pattern.palette} <= {color.id for color in palette.colors}
+
+
+# ---------- Pulido del motor (P2) ----------
+
+def test_api_defaults_are_the_ones_the_ui_should_use(client):
+    # width=40 / 14 colores: lo que recomienda el motor para la demo.
+    response = client.post(
+        "/api/patterns/convert",
+        files={"file": ("test.png", _bicolor(200, 100), "image/png")},
+        data={"craft": "hama"},
+    )
+    assert response.status_code == 200
+    pattern = PatternData(**response.json())
+    assert (pattern.width, pattern.height) == (40, 20)
+    assert len(pattern.palette) <= 14
+
+
+def test_symbols_are_ascii_unique_and_not_confusable():
+    symbols = _symbols(64)
+    assert len(symbols) == len(set(symbols)) == 64
+    assert all(len(symbol) == 1 and symbol.isascii() and symbol.isprintable() for symbol in symbols)
+    # Pares que en una carta impresa se confunden (0/O, 1/l/I, x/X).
+    assert not {"0", "1", "l", "I", "x"} & set(symbols)
+
+
+def test_pdf_has_one_page_per_tile():
+    pattern = PatternData(
+        craft="cross_stitch",
+        width=100,
+        height=100,
+        palette=[
+            PaletteColor(id="310", name="Negro", hex="#000000", symbol="X"),
+            PaletteColor(id="B5200", name="Blanco", hex="#FFFFFF", symbol="O"),
+        ],
+        cells=[0 if (i // 100 + i % 100) % 2 else 1 for i in range(100 * 100)],
+    )
+    pdf = render_pdf(pattern)
+    # ReportLab escribe /Type /Pages una vez (el árbol) y /Type /Page por página.
+    pages = pdf.count(b"/Type /Page") - pdf.count(b"/Type /Pages")
+    assert pages == 1 + len(_tile_positions(pattern, 40, 50))
+
+
+def test_remove_background_also_works_with_partial_transparency(client):
+    # Logo con una franja transparente y fondo blanco opaco: antes, con
+    # cualquier píxel transparente, el quitafondo se saltaba entero.
+    image = Image.new("RGBA", (40, 40), (255, 255, 255, 255))
+    draw = ImageDraw.Draw(image)
+    draw.rectangle([0, 0, 3, 39], fill=(0, 0, 0, 0))
+    draw.ellipse([14, 14, 25, 25], fill=(200, 30, 40, 255))
+    response = _post(
+        client, _png(image), width=20, max_colors=4, simplify=0, remove_background="true"
+    )
+    assert response.status_code == 200
+    pattern = PatternData(**response.json())
+    width = pattern.width
+    assert pattern.cells[width - 1] == -1  # esquina blanca opaca
+    assert pattern.cells[0] == -1  # franja transparente
+    assert pattern.cells[10 * width + 10] != -1  # el círculo sigue ahí
+
+
+def test_despeckle_removes_single_cells():
+    grid = np.zeros((7, 7), dtype=np.int16)
+    grid[3, 3] = 1
+    cleaned = _despeckle(grid, min_area=2)
+    assert cleaned[3, 3] == 0
+    assert 1 not in cleaned
+
+
+def test_merge_similar_fuses_near_duplicate_colors():
+    palette_lab = np.array([[50.0, 0.0, 0.0], [51.5, 0.0, 0.0], [50.0, 25.0, 25.0]])
+    grid = np.zeros((4, 6), dtype=np.int16)
+    grid[:, 2:4] = 1
+    grid[:, 4:] = 2
+    merged, chosen = _merge_similar(grid, [0, 1, 2], palette_lab, threshold=4.0)
+    assert len(chosen) == 2
+    assert len(set(merged[merged >= 0].tolist())) == 2
+
+
+def test_outline_marks_only_the_dark_side():
+    palette = Palette(
+        id="test",
+        name="Test",
+        craft="hama",
+        colors=[
+            PaletteColor(id="R", name="Rojo", hex="#FF0000"),
+            PaletteColor(id="G", name="Verde", hex="#00FF00"),
+            PaletteColor(id="K", name="Negro", hex="#000000"),
+        ],
+    )
+    grid = np.zeros((4, 4), dtype=np.int16)
+    grid[:, 2:] = 1
+    outlined, chosen = _outline(grid, [0, 1], palette)
+    # El rojo (más oscuro) recibe el contorno; el verde no se engorda.
+    assert outlined[:, 1].tolist() == [2, 2, 2, 2]
+    assert outlined[:, 2].tolist() == [1, 1, 1, 1]
+    assert outlined[:, 0].tolist() == [0, 0, 0, 0]
+    assert chosen[-1] == 2
+
+
+def test_noisy_background_ends_up_flat(client):
+    rng = np.random.default_rng(7)
+    base = np.full((120, 120, 3), 200, dtype=np.int16)
+    base += rng.integers(-7, 8, size=(120, 120, 3))
+    image = Image.fromarray(np.clip(base, 0, 255).astype(np.uint8), "RGB")
+    ImageDraw.Draw(image).ellipse([40, 40, 79, 79], fill=(200, 30, 40))
+
+    response = _post(client, _png(image), width=40, max_colors=8, simplify=2)
+    assert response.status_code == 200
+    pattern = PatternData(**response.json())
+    width = pattern.width
+    corner = {pattern.cells[y * width + x] for y in range(3) for x in range(3)}
+    assert len(corner) == 1
+
+
+def test_skin_tones_stay_warm(client):
+    rng = np.random.default_rng(3)
+    skin = np.full((120, 120, 3), (224, 172, 140), dtype=np.int16)
+    skin += rng.integers(-5, 6, size=(120, 120, 3))
+    image = Image.fromarray(np.clip(skin, 0, 255).astype(np.uint8), "RGB")
+
+    response = _post(client, _png(image), width=24, max_colors=5, simplify=2)
+    assert response.status_code == 200
+    pattern = PatternData(**response.json())
+    assert pattern.palette
+    for color in pattern.palette:
+        r, g, b = (int(color.hex[i : i + 2], 16) for i in (1, 3, 5))
+        assert r >= g >= b, f"{color.hex} no es un tono cálido"
+        assert r - b >= 20, f"{color.hex} se ha quedado gris"
+
