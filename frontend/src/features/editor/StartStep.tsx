@@ -33,7 +33,7 @@ export default function StartStep({
         <button
           type="button"
           onClick={onResumeDraft}
-          className="flex w-full items-center justify-between gap-3 rounded-2xl border border-brand/30 bg-brand/5 px-4 py-3 text-left text-sm text-brand transition hover:bg-brand/10"
+          className="flex w-full items-center justify-between gap-3 rounded-2xl border border-brand/30 bg-brand-soft/60 px-4 py-3 text-left text-sm text-brand-dark transition hover:bg-brand-soft"
         >
           <span>
             <strong>Continuar borrador</strong> · {draftInfo}
@@ -43,7 +43,7 @@ export default function StartStep({
       )}
 
       <section>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink/60">Técnica</h2>
+        <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-brand-dark">1 · Técnica</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {(
             [
@@ -61,17 +61,17 @@ export default function StartStep({
                 key={option.id}
                 type="button"
                 onClick={() => onCraft(option.id)}
-                className={`rounded-2xl border p-4 text-left transition ${
+                className={`rounded-3xl border p-4 text-left transition ${
                   selected
-                    ? "border-brand bg-white shadow-sm ring-2 ring-brand/30"
-                    : "border-ink/10 bg-white/70 hover:border-ink/25"
+                    ? "border-brand-dark bg-white shadow-card ring-2 ring-brand/30"
+                    : "border-line bg-white/80 hover:border-brand/50 hover:bg-white"
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold">{option.title}</span>
+                  <span className="font-bold">{option.title}</span>
                   <span
                     className={`h-4 w-4 rounded-full border ${
-                      selected ? "border-brand bg-brand" : "border-ink/25"
+                      selected ? "border-brand-dark bg-brand-dark" : "border-ink/25"
                     }`}
                   />
                 </div>
@@ -83,10 +83,10 @@ export default function StartStep({
       </section>
 
       <section>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink/60">Empezar</h2>
+        <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-brand-dark">2 · Empieza</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl border border-ink/10 bg-white p-4">
-            <h3 className="font-semibold">Lienzo en blanco</h3>
+          <div className="rounded-3xl border border-line bg-white p-4 shadow-card">
+            <h3 className="font-bold">Lienzo en blanco</h3>
             <p className="mt-1 text-sm text-ink/55">Dibuja punto a punto con el pincel.</p>
             <div className="mt-3 grid gap-2">
               {presets.map((preset) => (
@@ -94,7 +94,7 @@ export default function StartStep({
                   key={preset.label}
                   type="button"
                   onClick={() => onBlank(preset.width, preset.height)}
-                  className="rounded-xl border border-ink/10 px-3 py-2 text-left text-sm transition hover:border-brand hover:bg-brand/5"
+                  className="rounded-2xl border border-line px-3 py-2 text-left text-sm transition hover:border-brand hover:bg-brand-soft/50"
                 >
                   {preset.label}
                 </button>
@@ -103,8 +103,8 @@ export default function StartStep({
           </div>
 
           <div
-            className={`flex flex-col rounded-2xl border bg-white p-4 transition ${
-              dragging ? "border-brand ring-2 ring-brand/25" : "border-ink/10"
+            className={`flex flex-col rounded-3xl border bg-white p-4 shadow-card transition ${
+              dragging ? "border-brand ring-2 ring-brand/25" : "border-line"
             }`}
             onDragOver={(e) => {
               if (!onFile) return;
@@ -120,17 +120,17 @@ export default function StartStep({
               if (dropped && dropped.type.startsWith("image/")) onFile(dropped);
             }}
           >
-            <h3 className="font-semibold">Desde imagen</h3>
+            <h3 className="font-bold">Desde imagen</h3>
             <p className="mt-1 text-sm text-ink/55">
-              Sube una foto y la convertimos en un dibujo con pocos colores reales.
+              ¡Sube una foto y la convertimos en patrón! Con pocos colores reales.
             </p>
             <button
               type="button"
               onClick={onPickImage}
-              className={`mt-3 flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-6 transition ${
+              className={`mt-3 flex flex-1 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-6 transition ${
                 dragging
-                  ? "border-brand bg-brand/5 text-brand"
-                  : "border-ink/20 text-ink/60 hover:border-brand hover:text-brand"
+                  ? "border-brand bg-brand-soft/60 text-brand-dark"
+                  : "border-line bg-brand-soft/30 text-ink-soft hover:border-brand hover:text-brand-dark"
               }`}
             >
               <span className="flex items-center gap-2">

@@ -104,7 +104,7 @@ export default function EditorToolbar({
           title="Simetría horizontal"
           aria-pressed={symmetry}
           className={`flex items-center gap-1.5 rounded-2xl px-3 py-2 text-sm transition ${
-            symmetry ? "bg-brand text-white shadow-sm" : "bg-ink/5 text-ink/70 hover:text-ink"
+            symmetry ? "bg-brand-dark text-white shadow-sm" : "bg-ink/5 text-ink/70 hover:text-ink"
           }`}
         >
           <FlipHorizontal2 size={17} /> <span className="hidden sm:inline">Simetría</span>
@@ -159,7 +159,7 @@ export default function EditorToolbar({
             type="button"
             onClick={onPublish}
             disabled={!canPublish}
-            className="flex items-center gap-1.5 rounded-2xl bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-2xl bg-brand-dark px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-95 disabled:opacity-40"
           >
             <Share2 size={16} /> Publicar
           </button>

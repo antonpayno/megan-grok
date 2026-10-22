@@ -15,10 +15,10 @@ export function TagChip({ tag, count, active = false, className }: TagChipProps)
     <Link
       to={`/search?q=${encodeURIComponent(`#${tag}`)}`}
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm transition-colors",
+        "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm font-medium transition-colors",
         active
-          ? "border-brand bg-brand text-white"
-          : "border-line bg-white text-ink hover:border-brand/50 hover:bg-brand-soft",
+          ? "border-brand-dark bg-brand-dark text-white"
+          : "border-transparent bg-peach text-ink hover:bg-sky",
         className,
       )}
     >

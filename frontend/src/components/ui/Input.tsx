@@ -2,7 +2,7 @@ import { forwardRef, type InputHTMLAttributes, type ReactNode, type TextareaHTML
 import { cn } from "./cn";
 
 const FIELD =
-  "w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-soft/80 " +
+  "w-full rounded-2xl border bg-white px-4 py-2.5 text-sm text-ink placeholder:text-ink-soft/70 " +
   "transition-colors focus:outline-none focus:ring-2 focus:ring-brand disabled:cursor-not-allowed disabled:bg-paper";
 
 function fieldClass(invalid?: boolean, extra?: string) {

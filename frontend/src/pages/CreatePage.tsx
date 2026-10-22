@@ -426,25 +426,25 @@ export default function CreatePage() {
     <div className="space-y-4 pb-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand-dark">
             Estudio de patrones
           </p>
-          <h1 className="mt-0.5 text-xl font-bold sm:text-2xl">
+          <h1 className="mt-0.5 text-2xl font-extrabold sm:text-3xl">
             {step === "editor" ? "Editor de patrón" : step === "image" ? "Desde imagen" : "Crear patrón"}
           </h1>
-          <p className="text-sm text-ink-soft">
+          <p className="mt-1 text-sm text-ink-soft">
             {remixOf
               ? `Remix del patrón #${remixOf}`
               : step === "editor"
                 ? "Pinta, ajusta colores y publica. Se guarda solo."
-                : "Elige técnica y empieza en blanco o desde una foto."}
+                : "¡Sube una foto y la convertimos en patrón! O empieza en blanco."}
           </p>
         </div>
         {step === "editor" && (
           <button
             type="button"
             onClick={() => setStep("start")}
-            className="flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-2 text-sm text-ink-soft shadow-sm transition hover:border-ink/25 hover:text-ink"
+            className="flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-2 text-sm text-ink-soft shadow-sm transition hover:border-brand/50 hover:text-ink"
           >
             <ArrowLeft size={16} /> <span className="hidden sm:inline">Empezar de nuevo</span>
             <span className="sm:hidden">Nuevo</span>
@@ -452,12 +452,44 @@ export default function CreatePage() {
         )}
       </header>
 
+      <ol className="flex flex-wrap items-center gap-2 text-xs font-bold" aria-label="Pasos para crear un patrón">
+        {(
+          [
+            ["start", "1", "Elige y empieza"],
+            ["image", "2", "Ajusta la foto"],
+            ["editor", "3", "Pinta y publica"],
+          ] as const
+        ).map(([id, number, label]) => {
+          const active = step === id;
+          return (
+            <li
+              key={id}
+              aria-current={active ? "step" : undefined}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 ${
+                active
+                  ? "bg-brand-dark text-white shadow-sm"
+                  : "border border-line bg-white text-ink-soft"
+              }`}
+            >
+              <span
+                className={`grid size-5 place-items-center rounded-full text-[11px] ${
+                  active ? "bg-white/20" : "bg-brand-soft text-brand-dark"
+                }`}
+              >
+                {number}
+              </span>
+              {label}
+            </li>
+          );
+        })}
+      </ol>
+
       {notice && (
         <p
           role="status"
-          className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+          className="flex items-start gap-2 rounded-2xl border border-peach bg-peach/60 px-3 py-2 text-sm text-ink"
         >
-          <Sparkles size={15} className="mt-0.5 shrink-0" /> {notice}
+          <Sparkles size={15} className="mt-0.5 shrink-0 text-brand-dark" /> {notice}
         </p>
       )}
 
@@ -536,14 +568,14 @@ export default function CreatePage() {
             className="flex w-full items-center justify-between rounded-2xl border border-line bg-white px-3 py-2 text-sm text-ink-soft shadow-sm lg:hidden"
           >
             <span className="flex items-center gap-2">
-              <Sparkles size={15} className="text-brand" />
+              <Sparkles size={15} className="text-brand-dark" />
               {panelOpen ? "Ocultar materiales y ayuda" : "Ver materiales y ayuda"}
             </span>
             <ChevronDown size={16} className={panelOpen ? "rotate-180 transition" : "transition"} />
           </button>
 
           {pattern.palette.length === 0 && (
-            <p className="flex items-start gap-2 rounded-2xl border border-brand/20 bg-brand-soft/60 px-3 py-2 text-sm text-brand">
+            <p className="flex items-start gap-2 rounded-2xl border border-brand/20 bg-brand-soft/60 px-3 py-2 text-sm text-brand-dark">
               <Plus size={16} className="mt-0.5 shrink-0" />
               El lienzo está vacío: añade tu primer color con el botón <strong>+</strong> de la paleta y
               empieza a pintar.

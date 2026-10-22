@@ -298,7 +298,7 @@ export default function MakePage() {
             {Number.isFinite(postId) && (
               <Link
                 to={`/create?remix=${postId}`}
-                className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark"
+                className="rounded-full bg-brand-dark px-4 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-95"
               >
                 Crear mi versión
               </Link>
@@ -326,7 +326,11 @@ export default function MakePage() {
           </Link>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <h1 className="min-w-0 truncate text-xl font-bold sm:text-2xl">Hacer: {post.title}</h1>
-            <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-semibold text-brand">
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                isHama ? "bg-lavender text-ink" : "bg-mint text-ink"
+              }`}
+            >
               {isHama ? "HAMA" : "Punto de cruz"}
             </span>
           </div>
@@ -368,7 +372,7 @@ export default function MakePage() {
       )}
 
       {completed && (
-        <div className="animate-fade-in flex items-center gap-3 rounded-2xl border border-brand/25 bg-brand-soft px-4 py-3 text-brand">
+        <div className="animate-fade-in flex items-center gap-3 rounded-2xl border border-brand/25 bg-brand-soft px-4 py-3 text-brand-dark">
           <PartyPopper size={22} className="shrink-0" />
           <div className="min-w-0">
             <p className="font-semibold">¡Patrón completado!</p>
@@ -386,7 +390,7 @@ export default function MakePage() {
         className="flex w-full items-center justify-between rounded-2xl border border-line bg-white px-3 py-2 text-sm text-ink-soft shadow-sm lg:hidden"
       >
         <span className="flex items-center gap-2">
-          <Sparkles size={15} className="text-brand" />
+          <Sparkles size={15} className="text-brand-dark" />
           {panelOpen ? "Ocultar colores y materiales" : "Ver colores y materiales"}
         </span>
         <ChevronDown size={16} className={panelOpen ? "rotate-180 transition" : "transition"} />
@@ -397,7 +401,7 @@ export default function MakePage() {
           <div className="rounded-2xl border border-line bg-white p-4 shadow-card">
             <div className="mb-2 flex items-center justify-between gap-2 text-sm">
               <span className="font-medium">
-                Progreso <strong className="text-brand">{stats.pct}%</strong>
+                Progreso <strong className="text-brand-dark">{stats.pct}%</strong>
               </span>
               <span className="text-xs tabular-nums text-ink-soft">
                 {stats.done.toLocaleString("es-ES")} / {stats.total.toLocaleString("es-ES")} {unit}
@@ -412,12 +416,12 @@ export default function MakePage() {
               aria-label="Progreso del patrón"
             >
               <div
-                className="h-full rounded-full bg-brand transition-all duration-300"
+                className="h-full rounded-full bg-brand-dark transition-all duration-300"
                 style={{ width: `${stats.pct}%` }}
               />
             </div>
             {completed && (
-              <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-brand">
+              <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-brand-dark">
                 <CheckCircle2 size={14} /> Todas las celdas marcadas
               </p>
             )}
@@ -499,7 +503,7 @@ export default function MakePage() {
                           <span className="block h-full bg-brand/70" style={{ width: `${pct}%` }} />
                         </span>
                       </span>
-                      {pct === 100 && total > 0 && <Check size={14} className="shrink-0 text-brand" />}
+                      {pct === 100 && total > 0 && <Check size={14} className="shrink-0 text-brand-dark" />}
                     </button>
                   </li>
                 );
@@ -522,7 +526,7 @@ export default function MakePage() {
             <button
               type="button"
               onClick={() => navigate(`/create?remix=${postId}`)}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-brand px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-brand-dark px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
             >
               <Shuffle size={16} /> Remix
             </button>

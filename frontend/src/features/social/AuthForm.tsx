@@ -79,7 +79,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
       <div className="rounded-3xl border border-line bg-white p-6 shadow-card sm:p-8">
         <div className="mb-6 text-center">
           <span
-            className="mx-auto grid size-12 place-items-center rounded-2xl bg-brand text-white shadow-sm"
+            className="mx-auto grid size-12 place-items-center rounded-2xl bg-brand-dark text-white shadow-sm"
             aria-hidden
           >
             <Grid2x2 className="size-6" />
@@ -171,14 +171,14 @@ export function AuthForm({ mode }: { mode: Mode }) {
           {mode === "login" ? (
             <>
               ¿No tienes cuenta?{" "}
-              <Link to={`/register${next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}`} className="font-semibold text-brand hover:underline">
+              <Link to={`/register${next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}`} className="font-semibold text-brand-dark hover:underline">
                 Regístrate
               </Link>
             </>
           ) : (
             <>
               ¿Ya tienes cuenta?{" "}
-              <Link to={`/login${next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}`} className="font-semibold text-brand hover:underline">
+              <Link to={`/login${next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}`} className="font-semibold text-brand-dark hover:underline">
                 Entra
               </Link>
             </>

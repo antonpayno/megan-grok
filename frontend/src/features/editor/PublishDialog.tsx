@@ -113,13 +113,13 @@ export default function PublishDialog({
               {tags.map((tag) => (
                 <span
                   key={tag}
-                  className="flex items-center gap-1 rounded-lg bg-brand/10 px-2 py-1 text-xs font-medium text-brand"
+                  className="flex items-center gap-1 rounded-lg bg-brand/10 px-2 py-1 text-xs font-medium text-brand-dark"
                 >
                   #{tag}
                   <button
                     type="button"
                     onClick={() => setTags(tags.filter((t) => t !== tag))}
-                    className="text-brand/70 hover:text-brand"
+                    className="text-brand/70 hover:text-brand-dark"
                     aria-label={`Quitar ${tag}`}
                   >
                     <X size={12} />
@@ -161,7 +161,7 @@ export default function PublishDialog({
             <button
               type="submit"
               disabled={busy || !title.trim()}
-              className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-brand-dark px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-95 disabled:opacity-50"
             >
               {busy && <Loader2 size={15} className="animate-spin" />}
               Publicar

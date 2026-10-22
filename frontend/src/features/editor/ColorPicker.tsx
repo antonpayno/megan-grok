@@ -73,7 +73,7 @@ export default function ColorPicker({
           onClick={() => setOpen((v) => !v)}
           disabled={full}
           title={full ? "Máximo 64 colores" : "Añadir color"}
-          className="grid h-9 w-9 place-items-center rounded-xl border border-dashed border-ink/30 text-ink/60 transition hover:border-brand hover:text-brand disabled:opacity-40"
+          className="grid h-9 w-9 place-items-center rounded-xl border border-dashed border-ink/30 text-ink/60 transition hover:border-brand hover:text-brand-dark disabled:opacity-40"
         >
           <Plus size={16} />
         </button>

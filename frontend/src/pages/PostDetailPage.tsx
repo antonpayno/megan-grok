@@ -163,7 +163,14 @@ function PostDetailView({ post }: { post: PostOut }) {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 px-1 pt-3 text-xs text-ink-soft">
-            <span className="rounded-full bg-paper px-2.5 py-1 font-medium text-ink">{craftLabel(post.craft)}</span>
+            <span
+              className={cn(
+                "rounded-full px-2.5 py-1 font-bold",
+                post.craft === "hama" ? "bg-lavender text-ink" : "bg-mint text-ink",
+              )}
+            >
+              {craftLabel(post.craft)}
+            </span>
             <span>{patternSize(post.width, post.height, post.colors_count)}</span>
             <span aria-hidden>·</span>
             <time dateTime={post.created_at}>{relativeTime(post.created_at)}</time>
@@ -199,7 +206,7 @@ function PostDetailView({ post }: { post: PostOut }) {
             {post.remix_of && (
               <p className="text-sm text-ink-soft">
                 Remix de{" "}
-                <Link to={`/p/${post.remix_of}`} className="font-medium text-brand hover:underline">
+                <Link to={`/p/${post.remix_of}`} className="font-medium text-brand-dark hover:underline">
                   este patrón
                 </Link>
               </p>
@@ -214,7 +221,7 @@ function PostDetailView({ post }: { post: PostOut }) {
               aria-pressed={actions.liked}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60",
-                actions.liked ? "border-brand/30 bg-brand-soft text-brand" : "border-line bg-white text-ink hover:bg-paper",
+                actions.liked ? "border-brand/30 bg-brand-soft text-brand-dark" : "border-line bg-white text-ink hover:bg-paper",
               )}
             >
               <Heart className={cn("size-4", actions.liked && "fill-brand")} aria-hidden />

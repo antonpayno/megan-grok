@@ -162,8 +162,8 @@ export default function SearchPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl">
-      <h1 className="text-xl font-bold tracking-tight">Buscar</h1>
-      <p className="text-sm text-ink-soft">Personas, patrones y tags de la comunidad.</p>
+      <h1 className="text-2xl font-extrabold tracking-tight">Encuentra tu próximo patrón</h1>
+      <p className="text-sm text-ink-soft">Personas, patrones y tags de la comunidad. ¡Seguro que hay algo que te enamora!</p>
 
       <form onSubmit={submit} className="mt-4" role="search">
         <label htmlFor="search-input" className="sr-only">
@@ -364,7 +364,7 @@ function Discover({
     <div className="space-y-7">
       <section aria-labelledby="tags-tendencia">
         <h2 id="tags-tendencia" className="mb-2 flex items-center gap-2 text-sm font-semibold">
-          <TrendingUp className="size-4 text-brand" aria-hidden />
+          <TrendingUp className="size-4 text-brand-dark" aria-hidden />
           Tags en tendencia
         </h2>
         {trending === null ? (
@@ -405,7 +405,7 @@ function Discover({
                 <button
                   type="button"
                   onClick={() => onPick(term)}
-                  className="flex-1 truncate text-left text-sm transition-colors hover:text-brand"
+                  className="flex-1 truncate text-left text-sm transition-colors hover:text-brand-dark"
                 >
                   {term}
                 </button>

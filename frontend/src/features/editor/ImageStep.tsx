@@ -84,7 +84,7 @@ export default function ImageStep({
             type="button"
             onClick={onEdit}
             disabled={!pattern || busy}
-            className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark disabled:opacity-40"
+            className="rounded-full bg-brand-dark px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-95 disabled:opacity-40"
           >
             Editar patrón
           </button>
@@ -167,7 +167,7 @@ export default function ImageStep({
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
-                className="flex items-center gap-1 text-brand hover:underline"
+                className="flex items-center gap-1 text-brand-dark hover:underline"
               >
                 <Upload size={13} /> Cambiar
               </button>
@@ -180,14 +180,14 @@ export default function ImageStep({
                 <PatternPreview pattern={pattern} />
               ) : (
                 <span className="flex flex-col items-center gap-2 text-sm text-ink-soft">
-                  <Sparkles size={20} className="text-brand" />
+                  <Sparkles size={20} className="text-brand-dark" />
                   Ajusta y verás la vista previa
                 </span>
               )}
               {busy && (
                 <div className="absolute inset-0 grid place-items-center bg-white/75 backdrop-blur-sm">
                   <span className="flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-ink shadow-sm">
-                    <Loader2 className="animate-spin text-brand" size={16} /> Convirtiendo…
+                    <Loader2 className="animate-spin text-brand-dark" size={16} /> Convirtiendo…
                   </span>
                 </div>
               )}
@@ -245,7 +245,7 @@ export default function ImageStep({
               type="button"
               onClick={onOriginalWidth}
               disabled={!naturalSize || options.width >= maxWidth}
-              className="rounded-full border border-line bg-white px-2.5 py-1 font-medium text-ink transition hover:border-brand/50 hover:text-brand disabled:opacity-40"
+              className="rounded-full border border-line bg-white px-2.5 py-1 font-medium text-ink transition hover:border-brand/50 hover:text-brand-dark disabled:opacity-40"
               title={
                 naturalSize && naturalSize.width > 128
                   ? "Máximo permitido: 128 celdas de ancho"
@@ -307,7 +307,7 @@ export default function ImageStep({
           </div>
 
           <p className="flex items-start gap-1.5 rounded-xl bg-paper px-3 py-2 text-xs text-ink-soft">
-            <Sparkles size={13} className="mt-0.5 shrink-0 text-brand" />
+            <Sparkles size={13} className="mt-0.5 shrink-0 text-brand-dark" />
             Para {craft === "hama" ? "HAMA" : "punto de cruz"} conviene poca resolución y 8–16
             colores.
           </p>

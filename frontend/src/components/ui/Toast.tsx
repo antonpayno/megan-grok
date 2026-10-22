@@ -70,7 +70,7 @@ const TONES: Record<ToastKind, string> = {
 const ICON_TONES: Record<ToastKind, string> = {
   success: "text-emerald-600",
   error: "text-red-600",
-  info: "text-brand",
+  info: "text-brand-dark",
 };
 
 /** Contenedor global. Se monta una sola vez desde el Layout. */

@@ -61,7 +61,7 @@ export default function Layout() {
             aria-label="Pixel Pattern, ir al inicio"
             className="flex shrink-0 items-center gap-2 rounded-xl text-[16px] font-bold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:text-[17px]"
           >
-            <span className="grid size-8 place-items-center rounded-xl bg-brand text-white shadow-sm" aria-hidden>
+            <span className="grid size-8 place-items-center rounded-xl bg-brand-dark text-white shadow-sm" aria-hidden>
               <Grid2x2 className="size-4" />
             </span>
             <span>Pixel Pattern</span>
@@ -162,7 +162,7 @@ export default function Layout() {
       <main
         id="contenido"
         tabIndex={-1}
-        className="mx-auto w-full max-w-5xl flex-1 px-3 pb-24 pt-4 focus:outline-none sm:px-6 sm:pb-10 sm:pt-6"
+        className="mx-auto w-full max-w-5xl flex-1 px-3 pb-24 pt-6 focus:outline-none sm:px-6 sm:pb-10 sm:pt-8"
       >
         <Outlet />
       </main>
@@ -182,7 +182,7 @@ export default function Layout() {
                   className={({ isActive }) =>
                     cn(
                       "flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition-colors",
-                      isActive ? "text-brand" : "text-ink-soft hover:text-ink",
+                      isActive ? "text-brand-dark" : "text-ink-soft hover:text-ink",
                     )
                   }
                 >
@@ -191,7 +191,7 @@ export default function Layout() {
                       <span
                         className={cn(
                           "grid size-9 place-items-center rounded-full transition-colors",
-                          tab.accent && "bg-brand text-white shadow-sm",
+                          tab.accent && "bg-brand-dark text-white shadow-sm",
                           !tab.accent && isActive && "bg-brand-soft",
                         )}
                       >
@@ -216,7 +216,7 @@ export default function Layout() {
 function useAppHead() {
   useLayoutEffect(() => {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-      <rect width="32" height="32" rx="8" fill="#d02a50"/>
+      <rect width="32" height="32" rx="8" fill="#C9587E"/>
       <g fill="#fff">
         <rect x="6" y="8" width="6" height="6"/><rect x="20" y="8" width="6" height="6"/>
         <rect x="6" y="14" width="6" height="6"/><rect x="20" y="14" width="6" height="6"/>
@@ -239,7 +239,7 @@ function useAppHead() {
       theme.name = "theme-color";
       document.head.appendChild(theme);
     }
-    theme.content = "#fbf8f4";
+    theme.content = "#FFF9F5";
 
     let description = document.querySelector<HTMLMetaElement>('meta[name="description"]');
     if (!description) {

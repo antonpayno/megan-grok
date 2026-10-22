@@ -1,21 +1,26 @@
 @import "tailwindcss";
 
-/* Tokens de diseño compartidos. Persona 5 es dueña del estilo global;
-   el resto usa estas clases/variables en vez de inventar colores. */
+/* Tokens de diseño compartidos. Paleta pastel y amigable. */
+/* El resto de la app usa estas clases/variables en vez de inventar colores. */
 @theme {
-  /* Rosas con contraste AA sobre blanco (texto e iconos). */
-  --color-brand: #d02a50;
-  --color-brand-dark: #b02145;
-  --color-brand-soft: #fef2f5;
-  --color-ink: #1f1d2b;
-  --color-ink-soft: #6f6a7d;
-  --color-line: #ece6de;
-  --color-paper: #fbf8f4;
-  --color-paper-alt: #fffdfb;
-  --font-sans: "Inter", system-ui, sans-serif;
+  /* Rosas pastel; el texto usa brand-dark para mantener contraste AA. */
+  --color-paper: #FFF9F5;
+  --color-paper-alt: #FFFFFF;
+  --color-brand: #E88AA8;
+  --color-brand-dark: #C9587E;
+  --color-brand-soft: #FCE4EC;
+  --color-lavender: #E4DAF5;
+  --color-mint: #D6F0E6;
+  --color-peach: #FFE5D4;
+  --color-sky: #DCEBF7;
+  --color-ink: #3D3A4F;
+  --color-ink-soft: #8A8699;
+  --color-muted: #8A8699;
+  --color-line: #F1E7E2;
+  --font-sans: "Nunito", system-ui, sans-serif;
 
-  --shadow-card: 0 1px 2px rgb(31 29 43 / 0.04), 0 8px 24px -12px rgb(31 29 43 / 0.12);
-  --shadow-float: 0 12px 40px -12px rgb(31 29 43 / 0.25);
+  --shadow-card: 0 2px 4px rgb(61 58 79 / 0.04), 0 14px 34px -18px rgb(61 58 79 / 0.18);
+  --shadow-float: 0 18px 48px -16px rgb(61 58 79 / 0.28);
 
   --animate-fade-in: fade-in 0.2s ease-out both;
   --animate-slide-up: slide-up 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -47,7 +52,11 @@ html {
 }
 
 body {
-  background: var(--color-paper);
+  background:
+    radial-gradient(1100px 520px at 8% -10%, var(--color-brand-soft) 0%, transparent 62%),
+    radial-gradient(900px 460px at 100% 0%, var(--color-sky) 0%, transparent 58%),
+    var(--color-paper);
+  background-attachment: fixed;
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;

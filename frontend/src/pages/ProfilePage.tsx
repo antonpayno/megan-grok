@@ -212,7 +212,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={() => setPeopleModal("followers")}
-              className="rounded-md text-left transition-colors hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="rounded-md text-left transition-colors hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               <span className="font-semibold">{formatCount(profile.followers_count)}</span>{" "}
               <span className="text-ink-soft">seguidores</span>
@@ -220,7 +220,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={() => setPeopleModal("following")}
-              className="rounded-md text-left transition-colors hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="rounded-md text-left transition-colors hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               <span className="font-semibold">{formatCount(profile.following_count)}</span>{" "}
               <span className="text-ink-soft">seguidos</span>

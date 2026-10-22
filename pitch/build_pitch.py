@@ -37,17 +37,17 @@ SLIDE_H = 7.5
 MARGIN = 0.85
 CONTENT_W = SLIDE_W - 2 * MARGIN
 
-BG = RGBColor.from_string("FBF8F4")
-INK = RGBColor.from_string("1F1D2B")
-ACCENT = RGBColor.from_string("E8456B")
-ACCENT_DARK = RGBColor.from_string("CB3155")
-ACCENT_LIGHT = RGBColor.from_string("F28CA4")
-ACCENT_SOFT = RGBColor.from_string("FBE7ED")
+BG = RGBColor.from_string("FFF9F5")
+INK = RGBColor.from_string("3D3A4F")
+ACCENT = RGBColor.from_string("C9587E")
+ACCENT_DARK = RGBColor.from_string("B2496C")
+ACCENT_LIGHT = RGBColor.from_string("F3B7C8")
+ACCENT_SOFT = RGBColor.from_string("FCE4EC")
 WHITE = RGBColor.from_string("FFFFFF")
-MUTED = RGBColor.from_string("6E6A7C")
-BORDER = RGBColor.from_string("E7DED4")
-PLACEHOLDER = RGBColor.from_string("ECE5DC")
-PLACEHOLDER_LINE = RGBColor.from_string("C9BFB4")
+MUTED = RGBColor.from_string("8A8699")
+BORDER = RGBColor.from_string("F1E7E2")
+PLACEHOLDER = RGBColor.from_string("FDF1EA")
+PLACEHOLDER_LINE = RGBColor.from_string("E4DAF5")
 
 FONT = "Segoe UI"
 TOTAL_SLIDES = 11

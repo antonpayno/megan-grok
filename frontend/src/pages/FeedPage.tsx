@@ -44,27 +44,29 @@ export default function FeedPage() {
 
           <div className="relative flex items-start gap-3">
             <span
-              className="hidden size-11 shrink-0 place-items-center rounded-2xl bg-brand text-white shadow-sm sm:grid"
+              className="hidden size-11 shrink-0 place-items-center rounded-2xl bg-brand-dark text-white shadow-sm sm:grid"
               aria-hidden
             >
               <Grid2x2 className="size-5" />
             </span>
             <div className="min-w-0">
-              <p className="hidden text-[11px] font-semibold uppercase tracking-[0.18em] text-brand sm:block">
+              <p className="hidden text-[11px] font-bold uppercase tracking-[0.18em] text-brand-dark sm:block">
                 Pixel Pattern
               </p>
-              <h1 id="feed-heading" className="text-[22px] font-bold leading-tight tracking-tight text-ink sm:mt-0.5 sm:text-2xl">
-                Patrones de la comunidad
+              <h1 id="feed-heading" className="text-[22px] font-extrabold leading-tight tracking-tight text-ink sm:mt-0.5 sm:text-3xl">
+                Hecho a mano, pixel a pixel
               </h1>
-              <p className="mt-1 text-sm text-ink-soft">Crea, comparte y haz los patrones de otros.</p>
+              <p className="mt-1 text-sm text-ink-soft">
+                ¡Sube una foto y la convertimos en patrón! Descubre, guarda y haz los de la comunidad.
+              </p>
             </div>
           </div>
 
           {loggedOut && (
             <div className="relative mt-3 rounded-2xl border border-line bg-white/85 p-3.5 shadow-sm backdrop-blur-sm sm:mt-4 sm:flex sm:items-center sm:gap-4 sm:p-4">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold leading-snug">
-                  Crea patrones de HAMA y punto de cruz desde cualquier foto
+                <p className="text-sm font-bold leading-snug">
+                  Tus fotos, convertidas en patrones de HAMA o punto de cruz
                 </p>
                 <p className="mt-1 hidden text-xs text-ink-soft sm:block">
                   Explora gratis o entra para guardar tus favoritos y publicar los tuyos.
@@ -89,8 +91,8 @@ export default function FeedPage() {
       </section>
 
       <div className="mb-2 flex items-center justify-between gap-3 px-1">
-        <h2 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-          <Sparkles className="size-4 text-brand" aria-hidden />
+        <h2 className="flex items-center gap-1.5 text-sm font-bold text-ink">
+          <Sparkles className="size-4 text-brand-dark" aria-hidden />
           Lo último
         </h2>
         <span className="text-xs text-ink-soft">Hecho por la comunidad</span>

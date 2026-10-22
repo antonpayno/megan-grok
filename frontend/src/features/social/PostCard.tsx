@@ -12,10 +12,10 @@ export function CraftBadge({ craft, className }: { craft: PostOut["craft"]; clas
   return (
     <span
       className={cn(
-        "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ring-1 ring-inset",
+        "shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide ring-1 ring-inset",
         craft === "hama"
-          ? "bg-amber-100 text-amber-900 ring-amber-200"
-          : "bg-violet-100 text-violet-900 ring-violet-200",
+          ? "bg-lavender text-ink ring-lavender"
+          : "bg-mint text-ink ring-mint",
         className,
       )}
     >
@@ -84,10 +84,10 @@ export function PostCard({ post }: { post: PostOut }) {
             className="flex min-h-9 items-center gap-1.5 rounded-full px-2 text-sm transition-colors hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60"
           >
             <Heart
-              className={cn("size-5 transition-transform", actions.liked ? "scale-110 fill-brand text-brand" : "text-ink")}
+              className={cn("size-5 transition-transform", actions.liked ? "scale-110 fill-brand text-brand-dark" : "text-ink")}
               aria-hidden
             />
-            <span className={cn("text-xs font-medium", actions.liked ? "text-brand" : "text-ink-soft")}>
+            <span className={cn("text-xs font-medium", actions.liked ? "text-brand-dark" : "text-ink-soft")}>
               {formatCount(actions.likesCount)}
             </span>
           </button>
