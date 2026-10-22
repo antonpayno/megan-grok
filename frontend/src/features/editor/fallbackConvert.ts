@@ -16,8 +16,6 @@ export async function convertImageLocally(file: Blob, opts: ConvertOptions): Pro
     const height = Math.max(1, Math.min(128, Math.round((width * bitmap.height) / bitmap.width)));
     const pixels = rasterize(bitmap, width, height, opts.simplify);
 
-    if (opts.remove_background) removeBackground(pixels, width, height);
-
     const keep: number[] = [];
     for (let i = 0; i < width * height; i++) if (pixels[i * 4 + 3] > 32) keep.push(i);
 
@@ -105,57 +103,6 @@ function boxBlur(data: Uint8ClampedArray, width: number, height: number, passes:
       }
     }
     src.set(data);
-  }
-}
-
-/** Convierte en vacías las celdas conectadas al borde con color parecido al fondo. */
-function removeBackground(data: Uint8ClampedArray, width: number, height: number) {
-  let r = 0;
-  let g = 0;
-  let b = 0;
-  let n = 0;
-  const sample = (x: number, y: number) => {
-    const i = (y * width + x) * 4;
-    if (data[i + 3] <= 16) return;
-    r += data[i];
-    g += data[i + 1];
-    b += data[i + 2];
-    n++;
-  };
-  for (let x = 0; x < width; x++) {
-    sample(x, 0);
-    sample(x, height - 1);
-  }
-  for (let y = 0; y < height; y++) {
-    sample(0, y);
-    sample(width - 1, y);
-  }
-  if (!n) return;
-  const bg: RGB = [r / n, g / n, b / n];
-  const threshold = 44 * 44 * 3;
-
-  const visited = new Uint8Array(width * height);
-  const stack: number[] = [];
-  for (let x = 0; x < width; x++) {
-    stack.push(x, (height - 1) * width + x);
-  }
-  for (let y = 0; y < height; y++) {
-    stack.push(y * width, y * width + width - 1);
-  }
-  while (stack.length) {
-    const i = stack.pop()!;
-    if (visited[i]) continue;
-    visited[i] = 1;
-    const rgb: RGB = [data[i * 4], data[i * 4 + 1], data[i * 4 + 2]];
-    const alpha = data[i * 4 + 3];
-    if (alpha > 32 && colorDistance(rgb, bg) > threshold) continue;
-    data[i * 4 + 3] = 0;
-    const x = i % width;
-    const y = (i - x) / width;
-    if (x > 0) stack.push(i - 1);
-    if (x < width - 1) stack.push(i + 1);
-    if (y > 0) stack.push(i - width);
-    if (y < height - 1) stack.push(i + width);
   }
 }
 

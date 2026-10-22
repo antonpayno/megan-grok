@@ -84,9 +84,8 @@ remix**.
 
 > «Vamos a verlo con una foto real. [cambia a `/create`] Elijo HAMA y subo esta
 > fresa. [pulsa «Elegir imagen» y abre `pitch/demo/fresa-demo.jpg`] En medio
-> segundo tengo un patrón de 48 × 48 con 8 colores Hama. Puedo quitar el fondo
-> [marca «Quitar fondo»] y el patrón queda limpio, listo para retocar. [pulsa
-> «Editar patrón»].»
+> segundo tengo un patrón de 48 × 48 con 8 colores Hama, listo para retocar.
+> [pulsa «Editar patrón»].
 
 **Slide 5 — Motor (30 s).**
 
@@ -162,7 +161,6 @@ remix**.
    - **Ancho:** 48 celdas.
    - **Colores:** 12.
    - **Simplificar:** «Dibujo» (nivel 2).
-   - **Quitar fondo:** activado (optional, pero queda más limpio).
 5. Enseña el «Original» y el «Resultado» (`48 × 48 · 8 colores`).
 6. Pulsa **«Editar patrón»**.
 
@@ -230,8 +228,7 @@ remix**.
 **3. ¿Cuánto tarda y qué límites tiene?**
 > 0,3–0,6 s a 128 píxeles en la demo. Límites: 128 × 128 celdas, 64 colores por
 > patrón, entrada de hasta 10 MB y 1024 px de lado. Por encima de eso, el motor
-> reduce y avisa; el usuario ajusta ancho, colores, simplificación, contorno y
-> fondo.
+> reduce y avisa; el usuario ajusta ancho, colores, simplificación y contorno.
 
 **4. ¿Cómo se guarda el progreso del modo hacer?**
 > En `localStorage`, por post y por patrón: celdas hechas y colores que el

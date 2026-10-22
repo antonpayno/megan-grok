@@ -262,16 +262,6 @@ export default function ImageStep({
               />
               Contorno oscuro
             </label>
-
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-soft">
-              <input
-                type="checkbox"
-                checked={!!options.remove_background}
-                onChange={(e) => onChange({ remove_background: e.target.checked })}
-                className="h-4 w-4 accent-brand"
-              />
-              Quitar fondo
-            </label>
           </div>
 
           <p className="flex items-start gap-1.5 rounded-xl bg-paper px-3 py-2 text-xs text-ink-soft">

@@ -128,7 +128,7 @@ def test_simplify_flattens_high_frequency_noise(client):
     assert isolated / non_empty < 0.02
 
 
-def test_remove_background_marks_cells_empty(client):
+def test_remove_background_param_se_acepta_pero_se_ignora(client):
     image = Image.new("RGB", (40, 40), "white")
     ImageDraw.Draw(image).rectangle([12, 12, 27, 27], fill=(20, 20, 20))
     response = _post(
@@ -136,8 +136,8 @@ def test_remove_background_marks_cells_empty(client):
     )
     assert response.status_code == 200
     pattern = PatternData(**response.json())
-    assert pattern.cells.count(-1) > 0
-    # El cuadrado central debe sobrevivir.
+    # El parámetro sigue en el contrato, pero ya no vacía el fondo.
+    assert pattern.cells.count(-1) == 0
     assert pattern.cells[10 * pattern.width + 10] != -1
 
 
@@ -281,9 +281,9 @@ def test_pdf_has_one_page_per_tile():
     assert pages == 1 + len(_tile_positions(pattern, 40, 50))
 
 
-def test_remove_background_also_works_with_partial_transparency(client):
-    # Logo con una franja transparente y fondo blanco opaco: antes, con
-    # cualquier píxel transparente, el quitafondo se saltaba entero.
+def test_transparencia_real_se_respeta_aunque_se_pida_quitar_fondo(client):
+    # La transparencia del PNG sigue siendo celda vacía; el blanco opaco de
+    # alrededor ya no se recorta porque el quitafondo está desactivado.
     image = Image.new("RGBA", (40, 40), (255, 255, 255, 255))
     draw = ImageDraw.Draw(image)
     draw.rectangle([0, 0, 3, 39], fill=(0, 0, 0, 0))
@@ -294,8 +294,8 @@ def test_remove_background_also_works_with_partial_transparency(client):
     assert response.status_code == 200
     pattern = PatternData(**response.json())
     width = pattern.width
-    assert pattern.cells[width - 1] == -1  # esquina blanca opaca
-    assert pattern.cells[0] == -1  # franja transparente
+    assert pattern.cells[width - 1] != -1  # esquina blanca opaca: se conserva
+    assert pattern.cells[0] == -1  # franja transparente real
     assert pattern.cells[10 * width + 10] != -1  # el círculo sigue ahí
 
 

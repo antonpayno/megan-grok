@@ -56,7 +56,9 @@ export function useImageConversion(
 
   const makeJob = (version: number): Job | null => {
     if (!file) return null;
-    return { file, options: { ...options, craft, palette_id: paletteId }, version };
+    const cleaned: ConvertOptions = { ...options, craft, palette_id: paletteId };
+    delete cleaned.remove_background;
+    return { file, options: cleaned, version };
   };
 
   const runJob = async (job: Job): Promise<void> => {
@@ -140,11 +142,9 @@ export function useImageConversion(
   const retry = useCallback(() => {
     if (!file) return;
     const version = ++versionRef.current;
-    const job: Job = {
-      file,
-      options: { ...options, craft, palette_id: paletteId },
-      version,
-    };
+    const cleaned: ConvertOptions = { ...options, craft, palette_id: paletteId };
+    delete cleaned.remove_background;
+    const job: Job = { file, options: cleaned, version };
     setBusy(true);
     setError(null);
     void runJob(job);

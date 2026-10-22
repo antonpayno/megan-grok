@@ -610,6 +610,10 @@ def convert_image(
     img_w, img_h = img.size
     height = max(1, min(MAX_PATTERN_SIDE, round(width * img_h / img_w)))
 
+    # ``remove_background`` se mantiene en la firma por compatibilidad con el
+    # contrato de la API, pero ya no se aplica: el recorte se hace en el editor.
+    _ = remove_background
+
     rgba = np.asarray(img, dtype=np.uint8)
     rgb = rgba[..., :3]
     alpha = rgba[..., 3]
@@ -630,9 +634,6 @@ def convert_image(
     rgb_small = cv2.resize(rgb, (width, height), interpolation=cv2.INTER_AREA)
     alpha_small = cv2.resize(alpha, (width, height), interpolation=cv2.INTER_AREA)
     empty = alpha_small < 128
-
-    if remove_background:
-        empty = _remove_background(rgb_small, empty)
 
     lab = color.srgb_to_lab(rgb_small / 255.0)
     grid, chosen = _quantize(lab, empty, palette, effective_max_colors)

@@ -84,7 +84,6 @@ export default function CreatePage() {
     max_colors: 12,
     simplify: 2,
     outline: false,
-    remove_background: false,
   });
   const [zoom, setZoom] = useState(1);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -159,7 +158,11 @@ export default function CreatePage() {
     setDescription(stored.description);
     setTags(stored.tags);
     setRemixOf(stored.remixOf);
-    if (stored.options) setOptions(stored.options);
+    if (stored.options) {
+      const restoredOptions = { ...stored.options };
+      delete restoredOptions.remove_background;
+      setOptions(restoredOptions);
+    }
     if (stored.pattern && stored.pattern.cells.some((c) => c >= 0)) {
       editorRef.current.load(stored.pattern, { resetHistory: true });
       applyZoomFor(stored.pattern.width, stored.pattern.height);
