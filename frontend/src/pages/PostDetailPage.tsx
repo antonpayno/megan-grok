@@ -16,7 +16,6 @@ import { CommentsSection } from "../features/social/CommentsSection";
 import { fileSlug, patternToPngBlob } from "../features/social/exportPattern";
 import { FollowButton } from "../features/social/FollowButton";
 import { craftLabel, errorMessage, formatCount, patternSize, relativeTime } from "../features/social/format";
-import { MOCKS, mockPostById } from "../features/social/mock";
 import { TagChip } from "../features/social/TagChip";
 import { usePageTitle } from "../features/social/usePageTitle";
 import { useCellSize } from "../features/social/useCellSize";
@@ -45,7 +44,7 @@ export default function PostDetailPage() {
       return;
     }
 
-    const request = MOCKS ? Promise.resolve(mockPostById(postId)) : api.getPost(postId);
+    const request = api.getPost(postId);
     request
       .then((data) => {
         if (alive) setPost(data);
@@ -133,7 +132,7 @@ function PostDetailView({ post }: { post: PostOut }) {
   const remove = async () => {
     setDeleting(true);
     try {
-      if (!MOCKS) await api.deletePost(post.id);
+      await api.deletePost(post.id);
       toast.success("Patrón eliminado");
       navigate("/");
     } catch (err) {

@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { AtSign, Lock, Mail, User } from "lucide-react";
+import { ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { errorMessage } from "./format";
-import { MOCKS } from "./mock";
 
 type Mode = "login" | "register";
 type Errors = Partial<Record<"identifier" | "username" | "email" | "password", string>>;
@@ -64,7 +64,9 @@ export function AuthForm({ mode }: { mode: Mode }) {
       }
       // El <Navigate> de arriba se encarga de redirigir en cuanto cambia `user`.
     } catch (err) {
-      setApiError(errorMessage(err, "No se pudo completar la operación."));
+      // En login/registro el 401/409 significa credenciales o datos, no sesión caducada:
+      // mostramos siempre el mensaje concreto del backend.
+      setApiError(err instanceof ApiError ? err.message : errorMessage(err, "No se pudo completar la operación."));
       setSubmitting(false);
     }
   };
@@ -158,12 +160,6 @@ export function AuthForm({ mode }: { mode: Mode }) {
             {mode === "login" ? "Entrar" : "Crear cuenta"}
           </Button>
         </form>
-
-        {MOCKS && (
-          <p className="mt-4 rounded-xl bg-paper px-3 py-2 text-center text-xs text-ink-soft">
-            Modo demo activo: puedes entrar con cualquier usuario y contraseña.
-          </p>
-        )}
 
         <p className="mt-5 text-center text-sm text-ink-soft">
           {mode === "login" ? (

@@ -5,7 +5,6 @@ import type { PostOut } from "../../api/types";
 import { useAuth } from "../../auth/AuthContext";
 import { toast } from "../../components/ui/Toast";
 import { errorMessage } from "./format";
-import { MOCKS } from "./mock";
 
 export interface PostActions {
   liked: boolean;
@@ -55,13 +54,9 @@ export function usePostActions(post: PostOut): PostActions {
     setLikesCount((n) => Math.max(0, n + (next ? 1 : -1)));
     setPendingLike(true);
     try {
-      if (MOCKS) {
-        await wait(180);
-      } else {
-        const result = next ? await api.like(post.id) : await api.unlike(post.id);
-        setLiked(result.liked);
-        setLikesCount(result.likes_count);
-      }
+      const result = next ? await api.like(post.id) : await api.unlike(post.id);
+      setLiked(result.liked);
+      setLikesCount(result.likes_count);
     } catch (err) {
       setLiked(!next);
       setLikesCount((n) => Math.max(0, n + (next ? -1 : 1)));
@@ -79,12 +74,8 @@ export function usePostActions(post: PostOut): PostActions {
     setSaved(next);
     setPendingSave(true);
     try {
-      if (MOCKS) {
-        await wait(180);
-      } else {
-        const result = next ? await api.save(post.id) : await api.unsave(post.id);
-        setSaved(result.saved);
-      }
+      const result = next ? await api.save(post.id) : await api.unsave(post.id);
+      setSaved(result.saved);
       toast.success(next ? "Guardado en tu colección" : "Quitado de guardados");
     } catch (err) {
       setSaved(!next);
@@ -95,8 +86,4 @@ export function usePostActions(post: PostOut): PostActions {
   };
 
   return { liked, likesCount, saved, pendingLike, pendingSave, isMine, toggleLike, toggleSave };
-}
-
-function wait(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }

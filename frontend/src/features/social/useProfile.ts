@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../api/client";
 import type { UserProfile } from "../../api/types";
-import { MOCKS, mockProfile } from "./mock";
 
-/** Carga el perfil de un usuario (con datos de demo si VITE_MOCKS=1). */
+/** Carga el perfil de un usuario contra la API. */
 export function useProfile(username: string | undefined) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -19,7 +18,7 @@ export function useProfile(username: string | undefined) {
     setLoading(true);
     setError(null);
 
-    const request = MOCKS ? Promise.resolve(mockProfile(username)) : api.getProfile(username);
+    const request = api.getProfile(username);
     request
       .then((data) => {
         if (alive) setProfile(data);

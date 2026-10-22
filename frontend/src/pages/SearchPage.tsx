@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Clock, Search, SearchX, TrendingUp, X } from "lucide-react";
 import { api } from "../api/client";
@@ -11,7 +11,6 @@ import { Tabs } from "../components/ui/Tabs";
 import { cn } from "../components/ui/cn";
 import { errorMessage, formatCount } from "../features/social/format";
 import { FollowButton } from "../features/social/FollowButton";
-import { MOCKS, mockSearch, mockTrendingTags } from "../features/social/mock";
 import { PostGrid } from "../features/social/PostGrid";
 import { PostGridSkeleton } from "../features/social/PostSkeletons";
 import {
@@ -21,7 +20,6 @@ import {
   removeRecentSearch,
 } from "../features/social/recentSearches";
 import { TagChip } from "../features/social/TagChip";
-import { useDebouncedValue } from "../features/social/useDebouncedValue";
 import { usePageTitle } from "../features/social/usePageTitle";
 import { UserRow } from "../features/social/UserRow";
 
@@ -36,38 +34,64 @@ export default function SearchPage() {
   const craftParam = parseCraft(params.get("craft"));
 
   const [query, setQuery] = useState(qParam);
-  const debounced = useDebouncedValue(query, 300);
   const [results, setResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [trending, setTrending] = useState<TagCount[] | null>(null);
   const [recent, setRecent] = useState<string[]>(() => getRecentSearches());
 
-  usePageTitle(debounced.trim() ? `Buscar “${debounced.trim()}”` : "Buscar");
+  usePageTitle(qParam.trim() ? `Buscar “${qParam.trim()}”` : "Buscar");
 
-  // La URL manda cuando se llega desde un tag o el buscador del layout.
+  // La URL es la fuente de verdad (enlaces de tags, buscador del layout, atrás).
+  const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     setQuery((current) => (current === qParam ? current : qParam));
+    if (pushTimer.current) {
+      clearTimeout(pushTimer.current);
+      pushTimer.current = null;
+    }
   }, [qParam]);
 
-  // Input → URL con debounce (300 ms).
-  useEffect(() => {
-    const value = debounced.trim();
-    if (value === qParam) return;
+  useEffect(
+    () => () => {
+      if (pushTimer.current) clearTimeout(pushTimer.current);
+    },
+    [],
+  );
+
+  const updateParam = (key: string, value: string | null) => {
     setParams(
       (prev) => {
         const next = new URLSearchParams(prev);
-        if (value) next.set("q", value);
-        else next.delete("q");
+        if (value) next.set(key, value);
+        else next.delete(key);
         return next;
       },
       { replace: true },
     );
-  }, [debounced, qParam, setParams]);
+  };
 
-  // Búsqueda.
+  /** Pasa el texto a la URL 300 ms después de la última tecla. */
+  const scheduleSearch = (value: string) => {
+    if (pushTimer.current) clearTimeout(pushTimer.current);
+    pushTimer.current = setTimeout(() => {
+      pushTimer.current = null;
+      updateParam("q", value.trim() || null);
+    }, 300);
+  };
+
+  const clearQuery = () => {
+    if (pushTimer.current) {
+      clearTimeout(pushTimer.current);
+      pushTimer.current = null;
+    }
+    setQuery("");
+    updateParam("q", null);
+  };
+
+  // Búsqueda contra la API (la URL ya trae el debounce aplicado).
   useEffect(() => {
-    const term = debounced.trim();
+    const term = qParam.trim();
     if (!term) {
       setResults(null);
       setError(null);
@@ -78,11 +102,8 @@ export default function SearchPage() {
     setLoading(true);
     setError(null);
 
-    const request = MOCKS
-      ? new Promise<SearchResults>((resolve) => setTimeout(() => resolve(mockSearch(term)), 220))
-      : api.search(term, typeParam, craftParam ?? undefined);
-
-    request
+    api
+      .search(term, typeParam, craftParam ?? undefined)
       .then((data) => {
         if (!alive) return;
         setResults(data);
@@ -98,13 +119,13 @@ export default function SearchPage() {
     return () => {
       alive = false;
     };
-  }, [debounced, typeParam, craftParam]);
+  }, [qParam, typeParam, craftParam]);
 
   // Tags en tendencia (una sola vez).
   useEffect(() => {
     let alive = true;
-    const request = MOCKS ? Promise.resolve(mockTrendingTags()) : api.trendingTags();
-    request
+    api
+      .trendingTags()
       .then((tags) => {
         if (alive) setTrending(tags);
       })
@@ -116,26 +137,17 @@ export default function SearchPage() {
     };
   }, []);
 
-  const updateParam = (key: string, value: string | null) => {
-    setParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        if (value) next.set(key, value);
-        else next.delete(key);
-        return next;
-      },
-      { replace: true },
-    );
-  };
-
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    // Salta el debounce: el usuario ha pulsado Enter.
+    if (pushTimer.current) {
+      clearTimeout(pushTimer.current);
+      pushTimer.current = null;
+    }
     updateParam("q", query.trim() || null);
     if (query.trim()) setRecent(addRecentSearch(query.trim()));
   };
 
-  const hasQuery = debounced.trim().length > 0;
+  const hasQuery = qParam.trim().length > 0;
   const showResults = hasQuery && !loading && !error && results;
 
   const userResults = useMemo(() => results?.users ?? [], [results]);
@@ -163,17 +175,17 @@ export default function SearchPage() {
             id="search-input"
             autoFocus
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              scheduleSearch(e.target.value);
+            }}
             placeholder="Busca «gato», «#halloween» o @ana_hama"
             className="h-12 w-full rounded-full border border-line bg-white pl-12 pr-11 text-sm placeholder:text-ink-soft/70 focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/30"
           />
           {query && (
             <button
               type="button"
-              onClick={() => {
-                setQuery("");
-                updateParam("q", null);
-              }}
+              onClick={clearQuery}
               aria-label="Borrar búsqueda"
               className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-ink-soft transition-colors hover:bg-paper hover:text-ink"
             >
@@ -243,7 +255,7 @@ export default function SearchPage() {
             title="No se ha podido buscar"
             description={error}
             action={
-              <Button variant="secondary" onClick={() => updateParam("q", debounced.trim())}>
+              <Button variant="secondary" onClick={() => updateParam("q", qParam.trim())}>
                 Reintentar
               </Button>
             }
@@ -264,7 +276,7 @@ export default function SearchPage() {
           <EmptyState
             icon={<SearchX className="size-6" />}
             title="Sin resultados"
-            description={`No hemos encontrado nada para “${debounced.trim()}”. Prueba con otra palabra o un tag.`}
+            description={`No hemos encontrado nada para “${qParam.trim()}”. Prueba con otra palabra o un tag.`}
           />
         ) : (
           <div className="space-y-7">
@@ -301,7 +313,7 @@ export default function SearchPage() {
                       key={tag.tag}
                       tag={tag.tag}
                       count={tag.count}
-                      active={debounced.trim().replace(/^#/, "").toLowerCase() === tag.tag.toLowerCase()}
+                      active={qParam.trim().replace(/^#/, "").toLowerCase() === tag.tag.toLowerCase()}
                     />
                   ))}
                 </div>

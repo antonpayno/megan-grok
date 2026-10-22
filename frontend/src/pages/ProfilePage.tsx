@@ -15,7 +15,6 @@ import { Tabs } from "../components/ui/Tabs";
 import { toast } from "../components/ui/Toast";
 import { FollowButton } from "../features/social/FollowButton";
 import { errorMessage, formatCount } from "../features/social/format";
-import { MOCKS, mockFeedForProfile, mockUserList } from "../features/social/mock";
 import { PostGrid } from "../features/social/PostGrid";
 import { PostGridSkeleton } from "../features/social/PostSkeletons";
 import { useInfinitePosts } from "../features/social/useInfinitePosts";
@@ -58,11 +57,7 @@ export default function ProfilePage() {
     setPeople(null);
     setPeopleError(null);
 
-    const request = MOCKS
-      ? Promise.resolve(mockUserList(6))
-      : peopleModal === "followers"
-        ? api.followers(profile.username)
-        : api.following(profile.username);
+    const request = peopleModal === "followers" ? api.followers(profile.username) : api.following(profile.username);
 
     request
       .then((list) => {
@@ -80,7 +75,6 @@ export default function ProfilePage() {
   const fetchPage = useCallback(
     (cursor: number | null) => {
       if (!profile) return Promise.resolve({ items: [], next_cursor: null });
-      if (MOCKS) return Promise.resolve(mockFeedForProfile(profile.username, cursor));
       return tab === "saved" ? api.savedPosts(cursor) : api.listPosts({ author: profile.username, cursor });
     },
     [profile, tab],
@@ -108,9 +102,7 @@ export default function ProfilePage() {
     if (!profile || saving) return;
     setSaving(true);
     try {
-      const updated: UserProfile = MOCKS
-        ? { ...profile, display_name: displayName.trim(), bio: bio.trim() }
-        : await api.updateMe({ display_name: displayName.trim(), bio: bio.trim() });
+      const updated: UserProfile = await api.updateMe({ display_name: displayName.trim(), bio: bio.trim() });
       setProfile({ ...profile, ...updated });
       toast.success("Perfil actualizado");
       setEditing(false);
@@ -127,9 +119,7 @@ export default function ProfilePage() {
     if (!file || !profile) return;
     setUploading(true);
     try {
-      const updated: UserProfile = MOCKS
-        ? { ...profile, avatar_url: URL.createObjectURL(file) }
-        : await api.uploadAvatar(file);
+      const updated: UserProfile = await api.uploadAvatar(file);
       setProfile({ ...profile, ...updated });
       toast.success("Avatar actualizado");
     } catch (err) {

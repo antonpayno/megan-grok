@@ -9,7 +9,6 @@ import { Spinner } from "../components/ui/Spinner";
 import { Tabs } from "../components/ui/Tabs";
 import { PostCard } from "../features/social/PostCard";
 import { PostCardSkeleton } from "../features/social/PostSkeletons";
-import { MOCKS, mockFeedPage } from "../features/social/mock";
 import { useInfinitePosts } from "../features/social/useInfinitePosts";
 import { usePageTitle } from "../features/social/usePageTitle";
 
@@ -25,11 +24,7 @@ export default function FeedPage() {
     if (!user && mode === "following") setMode("explore");
   }, [user, mode]);
 
-  const fetchPage = useCallback(
-    (cursor: number | null) =>
-      MOCKS ? Promise.resolve(mockFeedPage(mode, cursor)) : api.feed(mode, cursor),
-    [mode],
-  );
+  const fetchPage = useCallback((cursor: number | null) => api.feed(mode, cursor), [mode]);
 
   const feed = useInfinitePosts(fetchPage, [mode]);
 

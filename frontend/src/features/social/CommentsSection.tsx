@@ -10,7 +10,6 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { toast } from "../../components/ui/Toast";
 import { errorMessage, relativeTime } from "./format";
-import { MOCKS } from "./mock";
 
 export interface CommentsSectionProps {
   postId: number;
@@ -34,7 +33,7 @@ export function CommentsSection({ postId, onCountChange }: CommentsSectionProps)
     setComments(null);
     setError(null);
 
-    const load = MOCKS ? Promise.resolve(fakeComments(postId)) : api.comments(postId);
+    const load = api.comments(postId);
     load
       .then((list) => {
         if (!alive) return;
@@ -63,14 +62,7 @@ export function CommentsSection({ postId, onCountChange }: CommentsSectionProps)
 
     setSending(true);
     try {
-      const comment: CommentOut = MOCKS
-        ? {
-            id: Date.now(),
-            author: { id: user.id, username: user.username, display_name: user.display_name, avatar_url: user.avatar_url },
-            text: value,
-            created_at: new Date().toISOString(),
-          }
-        : await api.addComment(postId, value);
+      const comment: CommentOut = await api.addComment(postId, value);
 
       setComments((prev) => {
         const list = prev ? [...prev, comment] : [comment];
@@ -148,22 +140,4 @@ export function CommentsSection({ postId, onCountChange }: CommentsSectionProps)
       </form>
     </section>
   );
-}
-
-function fakeComments(postId: number): CommentOut[] {
-  if (postId % 3 === 0) return [];
-  return [
-    {
-      id: 1,
-      author: { id: 2, username: "lucia_cross", display_name: "Lucía", avatar_url: null },
-      text: "¡Qué chulo! ¿Cuántos colores has usado?",
-      created_at: new Date(Date.now() - 3_600_000).toISOString(),
-    },
-    {
-      id: 2,
-      author: { id: 3, username: "mario_hama", display_name: "Mario", avatar_url: null },
-      text: "Me lo guardo para el finde 😍",
-      created_at: new Date(Date.now() - 86_400_000).toISOString(),
-    },
-  ];
 }

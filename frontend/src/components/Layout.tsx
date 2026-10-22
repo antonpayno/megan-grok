@@ -19,7 +19,7 @@ import { Dropdown, DropdownItem } from "../components/ui/Dropdown";
 import { Toaster } from "../components/ui/Toast";
 
 export default function Layout() {
-  const { user, logout } = useAuth();
+  const { user, logout, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [quickQuery, setQuickQuery] = useState("");
@@ -88,7 +88,12 @@ export default function Layout() {
               </Button>
             </Link>
 
-            {user ? (
+            {authLoading ? (
+              <span
+                aria-hidden
+                className="skeleton-shimmer block size-9 rounded-full"
+              />
+            ) : user ? (
               <Dropdown
                 label="Menú de cuenta"
                 trigger={({ open, toggle }) => (

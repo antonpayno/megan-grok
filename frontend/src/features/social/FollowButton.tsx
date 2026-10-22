@@ -6,7 +6,6 @@ import { useAuth } from "../../auth/AuthContext";
 import { Button } from "../../components/ui/Button";
 import { toast } from "../../components/ui/Toast";
 import { errorMessage } from "./format";
-import { MOCKS } from "./mock";
 
 export interface FollowButtonProps {
   username: string;
@@ -41,11 +40,7 @@ export function FollowButton({ username, isFollowing, onChange, size = "sm" }: F
     setFollowing(next);
     setPending(true);
     try {
-      const result: FollowOut = MOCKS
-        ? await fakeFollow(next)
-        : next
-          ? await api.follow(username)
-          : await api.unfollow(username);
+      const result: FollowOut = next ? await api.follow(username) : await api.unfollow(username);
       setFollowing(result.following);
       onChange?.(result);
     } catch (err) {
@@ -71,6 +66,3 @@ export function FollowButton({ username, isFollowing, onChange, size = "sm" }: F
   );
 }
 
-function fakeFollow(following: boolean): Promise<FollowOut> {
-  return new Promise((resolve) => setTimeout(() => resolve({ following, followers_count: 0 }), 200));
-}
