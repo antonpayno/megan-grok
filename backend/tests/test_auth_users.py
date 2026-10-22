@@ -1,7 +1,9 @@
 """Tests de auth, perfiles y follows (Persona 1)."""
 from datetime import datetime, timedelta, timezone
+from io import BytesIO
 
 import pytest
+from PIL import Image
 from sqlmodel import select
 
 from app import models
@@ -286,3 +288,65 @@ def test_followers_y_following_mas_recientes_primero(client, session, make_user)
     assert [u["username"] for u in followers.json()] == ["dani", "carla", "bea"]
     assert [u["username"] for u in following.json()] == ["bea"]
     assert set(followers.json()[0]) == {"id", "username", "display_name", "avatar_url"}
+
+
+# ---------- avatar ----------
+
+def _png_bytes(size: tuple[int, int] = (640, 480)) -> bytes:
+    buffer = BytesIO()
+    Image.new("RGB", size, (200, 30, 60)).save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+def test_avatar_redimensiona_y_guarda(client, make_user, monkeypatch, tmp_path):
+    import app.routers.users as users_router
+
+    monkeypatch.setattr(users_router, "MEDIA_DIR", tmp_path)
+    headers = make_user("ana")
+
+    r = client.post(
+        "/api/users/me/avatar",
+        headers=headers,
+        files={"file": ("foto.png", _png_bytes(), "image/png")},
+    )
+
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["avatar_url"].startswith(f"/media/avatars/{body['id']}.png?v=")
+
+    stored = tmp_path / "avatars" / f"{body['id']}.png"
+    assert stored.exists()
+    with Image.open(stored) as saved:
+        assert saved.size == (256, 256)
+
+
+def test_avatar_rechaza_no_imaxe(client, make_user, monkeypatch, tmp_path):
+    import app.routers.users as users_router
+
+    monkeypatch.setattr(users_router, "MEDIA_DIR", tmp_path)
+    headers = make_user("ana")
+
+    r = client.post(
+        "/api/users/me/avatar",
+        headers=headers,
+        files={"file": ("nota.txt", b"isto non e unha imaxe", "text/plain")},
+    )
+
+    assert r.status_code == 400
+    assert r.json()["detail"] == "El archivo no es una imagen válida"
+
+
+def test_avatar_rechaza_mais_de_5mb(client, make_user, monkeypatch, tmp_path):
+    import app.routers.users as users_router
+
+    monkeypatch.setattr(users_router, "MEDIA_DIR", tmp_path)
+    headers = make_user("ana")
+
+    r = client.post(
+        "/api/users/me/avatar",
+        headers=headers,
+        files={"file": ("grande.png", b"0" * (5 * 1024 * 1024 + 1), "image/png")},
+    )
+
+    assert r.status_code == 400
+    assert r.json()["detail"] == "La imagen no puede superar 5 MB"

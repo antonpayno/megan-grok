@@ -1,11 +1,19 @@
 """PROPIETARIO: Persona 1 (backend core). Solo Persona 1 edita este archivo."""
+import time
+from io import BytesIO
+
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from PIL import Image, ImageOps, UnidentifiedImageError
 from sqlalchemy import func
 from sqlmodel import select
 
+from ..config import MEDIA_DIR
 from ..deps import CurrentUser, OptionalUser, SessionDep
 from ..models import Follow, Post, User
 from ..schemas import FollowOut, UserProfile, UserPublic, UserUpdate
+
+MAX_AVATAR_BYTES = 5 * 1024 * 1024
+AVATAR_SIZE = 256
 
 router = APIRouter()
 
@@ -102,9 +110,42 @@ def update_me(data: UserUpdate, session: SessionDep, user: CurrentUser):
 
 
 @router.post("/me/avatar", response_model=UserProfile)
-def upload_avatar(session: SessionDep, user: CurrentUser, file: UploadFile = File(...)):
+async def upload_avatar(
+    session: SessionDep, user: CurrentUser, file: UploadFile = File(...)
+):
     """Guarda en MEDIA_DIR/avatars/<user_id>.png (redimensionado a 256x256) y pone avatar_url=/media/avatars/..."""
-    raise HTTPException(501, "TODO Persona 1")
+    raw = await file.read(MAX_AVATAR_BYTES + 1)
+    if len(raw) > MAX_AVATAR_BYTES:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "La imagen no puede superar 5 MB"
+        )
+
+    try:
+        with Image.open(BytesIO(raw)) as image:
+            image = ImageOps.exif_transpose(image).convert("RGB")
+    except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError):
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "El archivo no es una imagen válida"
+        )
+
+    # Recorte cuadrado centrado y redimensionado a 256x256.
+    width, height = image.size
+    side = min(width, height)
+    left, top = (width - side) // 2, (height - side) // 2
+    avatar = image.crop((left, top, left + side, top + side)).resize(
+        (AVATAR_SIZE, AVATAR_SIZE), Image.LANCZOS
+    )
+
+    avatars_dir = MEDIA_DIR / "avatars"
+    avatars_dir.mkdir(parents=True, exist_ok=True)
+    target = avatars_dir / f"{user.id}.png"
+    avatar.save(target, format="PNG")
+
+    user.avatar_url = f"/media/avatars/{user.id}.png?v={int(time.time())}"
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return _profile(session, user, viewer=user)
 
 
 @router.get("/{username}", response_model=UserProfile)
