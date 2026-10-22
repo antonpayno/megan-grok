@@ -315,7 +315,7 @@ def slide_cover(prs) -> None:
     s = prs.slides.add_slide(prs.slide_layouts[6])
     set_background(s)
 
-    add_eyebrow(s, "Hackathon · [Nombre del hackathon]")
+    add_eyebrow(s, "Pitch · 4 minutos")
     add_text(s, "Pixel\nPattern", MARGIN, 1.28, 7.2, 2.45, size=68,
              color=INK, bold=True, line_spacing=0.88)
     add_rect(s, MARGIN + 0.02, 3.93, 1.15, 0.07, fill=ACCENT)
@@ -351,7 +351,7 @@ def slide_problem(prs) -> None:
     rows = [
         "Contar cuentas a mano",
         "Colores que no existen en tu marca",
-        "Patrones dispersos, sin progreso",
+        "Dispersos en Pinterest, sin forma de hacerlos",
     ]
     for i, text in enumerate(rows):
         y = 2.55 + i * 0.92
@@ -540,7 +540,7 @@ def slide_demo_make(prs) -> None:
     rows = [
         "Modo por color",
         "Progreso cuenta a cuenta",
-        "Lista de materiales y placas",
+        "Lista de materiales y nº de placas",
         "PDF imprimible",
     ]
     for i, text in enumerate(rows):
