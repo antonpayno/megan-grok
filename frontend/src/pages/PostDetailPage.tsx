@@ -105,7 +105,6 @@ function PostDetailView({ post }: { post: PostOut }) {
   const actions = usePostActions(post);
   const { profile, setProfile } = useProfile(post.author.username);
 
-  const [commentsCount, setCommentsCount] = useState(post.comments_count);
   const [downloading, setDownloading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -267,12 +266,8 @@ function PostDetailView({ post }: { post: PostOut }) {
             </div>
           )}
 
-          <p className="text-xs text-ink-soft">
-            {commentsCount} {commentsCount === 1 ? "comentario" : "comentarios"}
-          </p>
-
           <div className="border-t border-line pt-4">
-            <CommentsSection postId={post.id} onCountChange={setCommentsCount} />
+            <CommentsSection postId={post.id} />
           </div>
 
           {isAuthor && (
