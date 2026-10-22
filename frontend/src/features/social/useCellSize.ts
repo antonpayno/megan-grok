@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 /**
  * Tamaño de celda (en px reales) para que un patrón quepa nítido en su contenedor.
@@ -8,7 +8,8 @@ export function useCellSize(side: number, maxCell = 64) {
   const ref = useRef<HTMLDivElement>(null);
   const [cellSize, setCellSize] = useState(2);
 
-  useEffect(() => {
+  // useLayoutEffect evita el parpadeo de una miniatura diminuta antes de medir.
+  useLayoutEffect(() => {
     const element = ref.current;
     if (!element) return;
 

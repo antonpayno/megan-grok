@@ -2,8 +2,8 @@ import { forwardRef, type InputHTMLAttributes, type ReactNode, type TextareaHTML
 import { cn } from "./cn";
 
 const FIELD =
-  "w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-soft/70 " +
-  "transition-colors focus:outline-none focus:ring-2 focus:ring-brand/40 disabled:cursor-not-allowed disabled:bg-paper";
+  "w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-soft/80 " +
+  "transition-colors focus:outline-none focus:ring-2 focus:ring-brand disabled:cursor-not-allowed disabled:bg-paper";
 
 function fieldClass(invalid?: boolean, extra?: string) {
   return cn(FIELD, invalid ? "border-red-400 focus:ring-red-300" : "border-line focus:border-brand/60", extra);

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { Bookmark, Camera, Grid3x3, Pencil, UserX } from "lucide-react";
 import { api } from "../api/client";
 import type { UserProfile, UserPublic } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
 import { Avatar } from "../components/ui/Avatar";
 import { Button } from "../components/ui/Button";
+import { ButtonLink } from "../components/ui/ButtonLink";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Input, Textarea } from "../components/ui/Input";
 import { Modal } from "../components/ui/Modal";
@@ -175,7 +176,7 @@ export default function ProfilePage() {
           <Avatar src={profile.avatar_url} name={profile.username} size="lg" className="sm:h-28 sm:w-28" />
           {isMe && (
             <label
-              className="absolute -bottom-1 -right-1 grid size-8 cursor-pointer place-items-center rounded-full border border-line bg-white text-ink shadow-sm transition-colors hover:bg-paper"
+              className="absolute -bottom-1 -right-1 grid size-8 cursor-pointer place-items-center rounded-full border border-line bg-white text-ink shadow-sm transition-colors hover:bg-paper focus-within:ring-2 focus-within:ring-brand"
               title="Cambiar avatar"
             >
               <Camera className="size-4" aria-hidden />
@@ -200,7 +201,7 @@ export default function ProfilePage() {
           <p className="text-sm text-ink-soft">@{profile.username}</p>
           {profile.bio && <p className="mt-2 max-w-prose whitespace-pre-line text-sm leading-relaxed">{profile.bio}</p>}
 
-          <dl className="mt-3 flex items-center gap-5 text-sm">
+          <dl className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
             <div>
               <dt className="sr-only">Patrones</dt>
               <dd>
@@ -211,7 +212,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={() => setPeopleModal("followers")}
-              className="rounded-md text-left transition-colors hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+              className="rounded-md text-left transition-colors hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               <span className="font-semibold">{formatCount(profile.followers_count)}</span>{" "}
               <span className="text-ink-soft">seguidores</span>
@@ -219,7 +220,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={() => setPeopleModal("following")}
-              className="rounded-md text-left transition-colors hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+              className="rounded-md text-left transition-colors hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               <span className="font-semibold">{formatCount(profile.following_count)}</span>{" "}
               <span className="text-ink-soft">seguidos</span>
@@ -266,9 +267,9 @@ export default function ProfilePage() {
             }
             action={
               (tab === "saved" || isMe) && (
-                <Link to={tab === "saved" ? "/" : "/create"}>
-                  <Button>{tab === "saved" ? "Explorar patrones" : "Crear un patrón"}</Button>
-                </Link>
+                <ButtonLink to={tab === "saved" ? "/" : "/create"}>
+                  {tab === "saved" ? "Explorar patrones" : "Crear un patrón"}
+                </ButtonLink>
               )
             }
           />

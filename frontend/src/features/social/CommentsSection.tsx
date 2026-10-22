@@ -122,22 +122,37 @@ export function CommentsSection({ postId, onCountChange }: CommentsSectionProps)
         </ul>
       )}
 
-      <form onSubmit={submit} className="mt-3 flex items-end gap-2">
-        <label htmlFor="comment-text" className="sr-only">
-          Escribe un comentario
-        </label>
-        <input
-          id="comment-text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          maxLength={500}
-          placeholder={user ? "Escribe un comentario…" : "Entra para comentar"}
-          className="h-10 flex-1 rounded-full border border-line bg-white px-4 text-sm placeholder:text-ink-soft/70 focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/30"
-        />
-        <Button type="submit" size="icon" aria-label="Enviar comentario" loading={sending} disabled={!text.trim()}>
-          <Send className="size-4" aria-hidden />
-        </Button>
-      </form>
+      {user ? (
+        <form onSubmit={submit} className="mt-3 flex items-end gap-2">
+          <label htmlFor="comment-text" className="sr-only">
+            Escribe un comentario
+          </label>
+          <input
+            id="comment-text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            maxLength={500}
+            placeholder="Escribe un comentario…"
+            className="h-10 flex-1 rounded-full border border-line bg-white px-4 text-sm placeholder:text-ink-soft/80 focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand"
+          />
+          <Button type="submit" size="icon" aria-label="Enviar comentario" loading={sending} disabled={!text.trim()}>
+            <Send className="size-4" aria-hidden />
+          </Button>
+        </form>
+      ) : (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-paper px-4 py-3">
+          <p className="text-sm text-ink-soft">Entra para comentar y guardar tus patrones favoritos.</p>
+          <Button
+            size="sm"
+            onClick={() => {
+              const next = encodeURIComponent(`${location.pathname}${location.search}`);
+              navigate(`/login?next=${next}`);
+            }}
+          >
+            Entrar
+          </Button>
+        </div>
+      )}
     </section>
   );
 }

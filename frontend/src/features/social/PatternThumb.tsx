@@ -12,11 +12,14 @@ export function PatternThumb({
   showGrid = false,
   padding = "p-3",
   className,
+  ariaLabel,
 }: {
   pattern: PatternData;
   showGrid?: boolean;
   padding?: string;
   className?: string;
+  /** Texto alternativo; si se omite, la miniatura es decorativa. */
+  ariaLabel?: string;
 }) {
   const side = Math.max(pattern.width, pattern.height);
   const { ref, cellSize } = useCellSize(side);
@@ -24,8 +27,19 @@ export function PatternThumb({
   return (
     <div className={cn("relative aspect-square w-full overflow-hidden bg-paper", className)}>
       <div className={cn("absolute inset-0 flex items-center justify-center", padding)}>
-        <div ref={ref} className="flex h-full w-full items-center justify-center">
-          <PatternCanvas pattern={pattern} cellSize={cellSize} showGrid={showGrid} className="block rounded-[2px]" />
+        <div
+          ref={ref}
+          role={ariaLabel ? "img" : undefined}
+          aria-label={ariaLabel}
+          aria-hidden={ariaLabel ? undefined : true}
+          className="flex h-full w-full items-center justify-center"
+        >
+          <PatternCanvas
+            pattern={pattern}
+            cellSize={cellSize}
+            showGrid={showGrid}
+            className="block max-w-full rounded-[3px] ring-1 ring-line/70 [image-rendering:pixelated]"
+          />
         </div>
       </div>
     </div>

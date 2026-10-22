@@ -3,9 +3,10 @@
 /* Tokens de diseño compartidos. Persona 5 es dueña del estilo global;
    el resto usa estas clases/variables en vez de inventar colores. */
 @theme {
-  --color-brand: #e8456b;
-  --color-brand-dark: #c22e52;
-  --color-brand-soft: #fdeaf0;
+  /* Rosas con contraste AA sobre blanco (texto e iconos). */
+  --color-brand: #d02a50;
+  --color-brand-dark: #b02145;
+  --color-brand-soft: #fef2f5;
   --color-ink: #1f1d2b;
   --color-ink-soft: #6f6a7d;
   --color-line: #ece6de;
@@ -55,6 +56,32 @@ body {
 
 ::selection {
   background: color-mix(in srgb, var(--color-brand) 25%, transparent);
+}
+
+/* Foco visible para cualquier control que no defina su propio anillo.
+   Las utilidades de Tailwind tienen más prioridad, así que no duplica. */
+@layer base {
+  :where(a, button, [role="button"], summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Utilidades propias (sin renombrar ni borrar tokens existentes). */

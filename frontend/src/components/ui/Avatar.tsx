@@ -8,7 +8,8 @@ const SIZES = {
   xl: "size-28 text-3xl",
 } as const;
 
-const COLORS = ["#e8456b", "#7c5cff", "#0ea5e9", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444"];
+// Tonos oscuros: el texto blanco de las iniciales mantiene contraste AA.
+const COLORS = ["#c22e52", "#5b3df5", "#0369a1", "#047857", "#b45309", "#6d28d9", "#b91c1c"];
 
 export interface AvatarProps {
   src?: string | null;
